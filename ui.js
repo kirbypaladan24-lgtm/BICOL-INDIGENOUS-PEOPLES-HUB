@@ -656,7 +656,8 @@ function bindReactions(article, post) {
   const adjust = (btn, delta) => {
     const el = btn.querySelector(".count");
     const current = Number(el.textContent || 0);
-    el.textContent = current + delta;
+    const next = current + delta;
+    el.textContent = Math.max(0, next);
   };
 
   const setActive = (likeActive, dislikeActive) => {
