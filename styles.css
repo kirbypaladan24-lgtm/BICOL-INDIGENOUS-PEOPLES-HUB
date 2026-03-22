@@ -1771,6 +1771,44 @@ button {
   }
 }
 
+@media (max-width: 540px) {
+  .topbar {
+    height: auto;
+    padding: 10px 14px;
+    grid-template-columns: 1fr auto;
+    grid-auto-rows: min-content;
+    align-items: start;
+  }
+
+  .brand {
+    align-items: center;
+    gap: 10px;
+  }
+
+  .brand h1 {
+    font-size: 16px;
+    line-height: 1.2;
+  }
+
+  .brand p {
+    font-size: 12px;
+  }
+
+  .auth-cta {
+    gap: 8px;
+    align-items: center;
+  }
+
+  .auth-cta .theme-toggle {
+    width: 54px;
+    height: 30px;
+  }
+
+  body {
+    padding-top: 120px;
+  }
+}
+
 [data-theme="light"] .mobile-menu {
   background: rgba(246, 246, 241, 0.96);
   border-bottom-color: #d8dfd2;
