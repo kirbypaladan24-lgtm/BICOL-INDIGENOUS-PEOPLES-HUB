@@ -928,6 +928,9 @@ observeAuth(async (user) => {
   newPostBtn.classList.toggle("hidden", !authed || isAdminUser);
   cachedAuthorName = null;
 
+  // expose auth state for UI helpers (e.g., reactions gating)
+  window.__currentUser = user || null;
+
   const adminSection = document.getElementById("adminPanel");
   if (authed && isAdminUser) {
     adminSection?.classList.remove("hidden");
