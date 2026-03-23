@@ -50,6 +50,8 @@ const accuracyIndicator = document.getElementById("accuracyIndicator"); // optio
 const policyDialog = document.getElementById("policyDialog");
 const policyProceed = document.getElementById("policyProceed");
 const policyNote = document.getElementById("policyNote");
+const postSearchInput = document.getElementById("postSearch");
+const clearPostSearch = document.getElementById("clearPostSearch");
 
 // Global Map State
 let userMarker = null;
@@ -73,6 +75,9 @@ const MAX_IMAGES_PER_POST = 10;
 let cachedAuthorName = null;
 const THEME_KEY = "bicol-ip-theme";
 const POLICY_KEY = "bicol-ip-policy-v1";
+const LANDMARK_CACHE_KEY = "bicol-ip-landmarks-cache-v1";
+const LANDMARK_CACHE_TTL_MS = 1000 * 60 * 30;
+let allPostsCache = [];
 
 // Buffers and state
 let positionsBuffer = []; // {lat,lng,accuracy,timestamp}
@@ -188,6 +193,42 @@ function normalizeContent(html) {
     return html.replace(/\n/g, "<br>");
   }
   return html;
+}
+
+function normalizeSearchText(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function stripHtml(html) {
+  const tmp = document.createElement("div");
+  tmp.innerHTML = html || "";
+  return tmp.textContent || tmp.innerText || "";
+}
+
+function filterPostsByQuery(posts, query) {
+  const q = normalizeSearchText(query);
+  if (!q) return posts;
+  return posts.filter((p) => {
+    const haystack = normalizeSearchText(
+      `${p.title || ""} ${p.author || ""} ${stripHtml(p.content || "")}`
+    );
+    return haystack.includes(q);
+  });
+}
+
+function applyPostFilter() {
+  const query = postSearchInput?.value || "";
+  const filtered = filterPostsByQuery(allPostsCache, query);
+  const empty = document.getElementById("postsEmpty");
+  if (empty) {
+    empty.textContent = query ? "No posts match your search." : "No posts yet. Sign in to add the first story.";
+  }
+  renderPosts(filtered);
 }
 
 async function resolveAuthorName() {
@@ -666,55 +707,89 @@ function initMap() {
 async function loadLandmarksToMap() {
   if (!mapInstance || !mapMarkersLayer) return;
   mapMarkersLayer.clearLayers();
+
+  const normalizeLandmarks = (items) =>
+    Array.isArray(items)
+      ? items.map((l) => {
+          const lat = l?.position?.lat ?? l?.lat;
+          const lng = l?.position?.lng ?? l?.lng;
+          return {
+            id: l?.id,
+            name: l?.name || "Landmark",
+            position: { lat: Number(lat), lng: Number(lng) },
+            summary: l?.summary || "",
+            coverUrl: l?.coverUrl || null,
+            color: l?.color || null,
+          };
+        })
+      : [];
+
+  const renderLandmarks = (items) => {
+    mapMarkersLayer.clearLayers();
+    const valid = items.filter((m) => isFinite(m.position.lat) && isFinite(m.position.lng));
+    const data = valid.length ? valid : defaultLandmarks;
+    const infoBox = document.getElementById("mapInfo");
+    data.forEach((m) => {
+      if (!isFinite(m.position.lat) || !isFinite(m.position.lng)) return;
+      const marker = L.circleMarker([m.position.lat, m.position.lng], {
+        radius: 7,
+        color: m.color || "#5a9a6a",
+        fillColor: m.color || "#5a9a6a",
+        fillOpacity: 0.9,
+        weight: 2,
+      }).addTo(mapMarkersLayer);
+      if (m.name) {
+        marker.bindTooltip(m.name, { permanent: true, direction: "top", offset: [0, -10] }).openTooltip();
+      }
+      marker.on("click", () => {
+        infoBox.classList.remove("hidden");
+        infoBox.innerHTML = `<h4>${m.name}</h4><p>${m.summary || ""}</p>`;
+        if (m.id) {
+          window.location.href = `landmark.html?id=${encodeURIComponent(m.id)}`;
+        }
+      });
+    });
+    setStats({ groupCount: data.length });
+  };
+
+  const readLandmarkCache = () => {
+    try {
+      const raw = localStorage.getItem(LANDMARK_CACHE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed?.data || !Array.isArray(parsed.data)) return null;
+      if (Date.now() - parsed.savedAt > LANDMARK_CACHE_TTL_MS) return null;
+      return parsed.data;
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const writeLandmarkCache = (data) => {
+    try {
+      localStorage.setItem(
+        LANDMARK_CACHE_KEY,
+        JSON.stringify({ savedAt: Date.now(), data })
+      );
+    } catch (e) {}
+  };
+
+  const cached = readLandmarkCache();
+  if (cached) {
+    renderLandmarks(normalizeLandmarks(cached));
+  }
+
   await ensureAnonAuth();
   let landmarks = [];
   try {
     landmarks = await fetchLandmarks(true);
+    writeLandmarkCache(landmarks);
   } catch (e) {
     console.warn("Failed to fetch landmarks, using defaults.", e);
   }
 
-  const normalized = Array.isArray(landmarks)
-    ? landmarks.map((l) => {
-        const lat = l?.position?.lat ?? l?.lat;
-        const lng = l?.position?.lng ?? l?.lng;
-        return {
-          id: l?.id,
-          name: l?.name || "Landmark",
-          position: { lat: Number(lat), lng: Number(lng) },
-          summary: l?.summary || "",
-          coverUrl: l?.coverUrl || null,
-          color: l?.color || null,
-        };
-      })
-    : [];
-
-  const valid = normalized.filter((m) => isFinite(m.position.lat) && isFinite(m.position.lng));
-  const data = valid.length ? valid : defaultLandmarks;
-
-  const infoBox = document.getElementById("mapInfo");
-  data.forEach((m) => {
-    if (!isFinite(m.position.lat) || !isFinite(m.position.lng)) return;
-    const marker = L.circleMarker([m.position.lat, m.position.lng], {
-      radius: 7,
-      color: m.color || "#5a9a6a",
-      fillColor: m.color || "#5a9a6a",
-      fillOpacity: 0.9,
-      weight: 2,
-    }).addTo(mapMarkersLayer);
-    if (m.name) {
-      marker.bindTooltip(m.name, { permanent: true, direction: "top", offset: [0, -10] }).openTooltip();
-    }
-    marker.on("click", () => {
-      infoBox.classList.remove("hidden");
-      infoBox.innerHTML = `<h4>${m.name}</h4><p>${m.summary || ""}</p>`;
-      if (m.id) {
-        window.location.href = `landmark.html?id=${encodeURIComponent(m.id)}`;
-      }
-    });
-  });
-
-  setStats({ groupCount: data.length });
+  const normalized = normalizeLandmarks(landmarks);
+  renderLandmarks(normalized);
 }
 
 // --- Posts/auth/UI plumbing (kept as in your original file) ---
@@ -724,6 +799,14 @@ closeAuth.addEventListener("click", () => authDialog.close());
 
 exploreBtn.addEventListener("click", () => document.getElementById("posts").scrollIntoView({ behavior: "smooth" }));
 scrollMapBtn?.addEventListener("click", () => document.getElementById("map").scrollIntoView({ behavior: "smooth" }));
+
+postSearchInput?.addEventListener("input", () => applyPostFilter());
+clearPostSearch?.addEventListener("click", () => {
+  if (!postSearchInput) return;
+  postSearchInput.value = "";
+  applyPostFilter();
+  postSearchInput.focus();
+});
 
 menuToggle?.addEventListener("click", () => {
   const isOpen = mobileMenu.classList.toggle("open");
@@ -868,6 +951,17 @@ function bindUserToolbar() {
     const text = (e.clipboardData || window.clipboardData).getData("text/plain");
     if (text) document.execCommand("insertText", false, text);
   });
+  userEditor.addEventListener("keydown", (e) => {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    const key = e.key.toLowerCase();
+    if (!["b", "i", "u"].includes(key)) return;
+    e.preventDefault();
+    focusEditor();
+    if (key === "b") document.execCommand("bold");
+    if (key === "i") document.execCommand("italic");
+    if (key === "u") document.execCommand("underline");
+    updateStates();
+  });
   ["keyup", "mouseup", "blur"].forEach((evt) => userEditor.addEventListener(evt, updateStates));
 }
 bindUserToolbar();
@@ -972,7 +1066,8 @@ async function loadPosts() {
   try {
     await ensureAnonAuth();
     const posts = await fetchPosts();
-    renderPosts(posts);
+    allPostsCache = posts;
+    applyPostFilter();
     setStats({
       postCount: posts.length || "--",
       lastUpdated: posts[0]?.updatedAt?.toDate?.().toLocaleDateString?.() || "N/A",
@@ -1018,7 +1113,8 @@ initTheme();
 initPolicyGate();
 // Real-time posts
 postsUnsub = observePosts((posts) => {
-  renderPosts(posts);
+  allPostsCache = posts;
+  applyPostFilter();
   setStats({
     postCount: posts.length || "--",
     lastUpdated: posts[0]?.updatedAt?.toDate?.().toLocaleDateString?.() || "N/A",
