@@ -238,7 +238,7 @@ async function handleSave() {
     const authorName = await resolveAuthorName();
     await savePost({ id: currentId, title, content, media, author: authorName });
 
-    showToast(currentId ? "Post updated" : "Post published", "success");
+    showToast(currentId ? "Post updated successfully." : "Post published successfully.", "success");
     await loadAdminPosts();
     window.dispatchEvent(new Event("posts-updated"));
     resetForm();
@@ -373,7 +373,7 @@ async function handleSaveLandmark() {
       coverUrl = uploaded[0] || coverUrl;
     }
     await saveLandmark({ id: currentLandmarkId, name, lat, lng, summary, coverUrl, color });
-    showToast(currentLandmarkId ? "Landmark updated" : "Landmark added");
+    showToast(currentLandmarkId ? "Landmark updated successfully." : "Landmark added successfully.", "success");
     await loadLandmarks();
     window.dispatchEvent(new Event("landmarks-updated"));
     resetLandmarkForm();
@@ -434,7 +434,7 @@ async function loadLandmarks() {
         if (!confirm("Delete this landmark?")) return;
         try {
           await deleteLandmark(id);
-          showToast("Landmark deleted");
+          showToast("Landmark deleted successfully.", "success");
           await loadLandmarks();
           window.dispatchEvent(new Event("landmarks-updated"));
         } catch (e) {
@@ -508,7 +508,7 @@ async function loadAdminPosts() {
         if (!confirm("Delete this post?")) return;
         try {
           await deletePost(id);
-          showToast("Deleted", "success");
+          showToast("Post deleted successfully.", "success");
           await loadAdminPosts();
           window.dispatchEvent(new Event("posts-updated"));
         } catch (e) {
