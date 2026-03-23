@@ -6,6 +6,9 @@ import {
   signInAnonymously,
   onAuthStateChanged,
   signOut,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  updatePassword,
 } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 import {
   getFirestore,
@@ -79,9 +82,13 @@ export async function createAccount(email, password) {
   return user;
 }
 
-export async function resetPassword(email) {
-  // no-op; password reset removed
-  return;
+export async function changePassword({ currentPassword, newPassword }) {
+  const user = auth.currentUser;
+  if (!user?.email) throw new Error("No authenticated user.");
+  if (!currentPassword || !newPassword) throw new Error("Missing password fields.");
+  const cred = EmailAuthProvider.credential(user.email, currentPassword);
+  await reauthenticateWithCredential(user, cred);
+  await updatePassword(user, newPassword);
 }
 
 export async function createAccountWithProfile({ email, password, username, phone, birthdate }) {
@@ -136,7 +143,7 @@ export async function fetchPost(id, forceServer = false) {
  * - Accepts media: array of image URLs (preferred)
  * - For backward compatibility we also set coverUrl to first media item or null
  */
-export async function savePost({ id, title, content, media = [], author }) {
+export async function savePost({ id, title, content, media = [], author, authorId = null }) {
   const coverUrl = Array.isArray(media) && media.length ? media[0] : null;
   const payload = {
     title,
@@ -144,6 +151,7 @@ export async function savePost({ id, title, content, media = [], author }) {
     media: Array.isArray(media) ? media : media ? [media] : [],
     coverUrl: coverUrl, // keep for compatibility with older clients
     author,
+    authorId: authorId || null,
     updatedAt: serverTimestamp(),
   };
   if (id) {
