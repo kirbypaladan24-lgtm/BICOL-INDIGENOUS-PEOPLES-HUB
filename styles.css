@@ -948,6 +948,33 @@ button {
   max-width: min(520px, 90vw);
   text-align: center;
   opacity: 0.98;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.toast-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+
+.toast-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 14px;
+}
+
+.toast-message {
+  font-weight: 600;
 }
 
 /* keep variant colors */
@@ -1172,6 +1199,48 @@ button {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 10px;
+}
+
+.policy-modal {
+  width: min(720px, 92vw);
+}
+
+.policy-body {
+  display: grid;
+  gap: 12px;
+  line-height: 1.6;
+}
+
+.policy-body ul {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+}
+
+.policy-muted {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.policy-choices {
+  display: grid;
+  gap: 8px;
+}
+
+.policy-choices label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.policy-note {
+  font-size: 13px;
+  color: var(--muted);
 }
 
 .icon-btn {
