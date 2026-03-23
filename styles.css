@@ -265,6 +265,11 @@ button {
   transform: translateY(-1px);
 }
 
+.ghost.small {
+  padding: 10px 14px;
+  font-size: 13px;
+}
+
 [data-theme="light"] .ghost {
   background: rgba(63, 107, 63, 0.08);
   border-color: #d4dcca;
@@ -659,6 +664,12 @@ button {
 .post-body a {
   color: var(--accent-2);
   text-decoration: underline;
+}
+
+.post-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
 }
 
 .post-reactions {
@@ -1901,6 +1912,9 @@ button {
   .auth-cta button:not(.icon-only):not(.theme-toggle) {
     display: none;
   }
+  .auth-cta a {
+    display: none;
+  }
   .theme-toggle {
     display: inline-flex;
   }
@@ -1948,6 +1962,11 @@ button {
   }
   .mobile-actions button {
     width: 100%;
+  }
+  .mobile-actions .ghost.full {
+    display: block;
+    width: 100%;
+    text-align: center;
   }
 
   /* adjust gallery sizes for narrower screens */
