@@ -521,6 +521,7 @@ export function renderPosts(posts) {
     const images = Array.from(article.querySelectorAll("img"));
     images.forEach((imgEl) => {
       if (imgEl.closest(".insta-carousel")) return;
+      if (!imgEl.loading) imgEl.loading = "lazy";
       imgEl.style.cursor = "pointer";
       imgEl.draggable = false;
       if (imgEl.__lightboxBound) return;
