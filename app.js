@@ -47,6 +47,9 @@ const userToolbar = document.getElementById("userToolbar");
 const trackLocationBtn = document.getElementById("trackLocationBtn");
 const mapInfo = document.getElementById("mapInfo");
 const accuracyIndicator = document.getElementById("accuracyIndicator"); // optional small UI element for signal
+const policyDialog = document.getElementById("policyDialog");
+const policyProceed = document.getElementById("policyProceed");
+const policyNote = document.getElementById("policyNote");
 
 // Global Map State
 let userMarker = null;
@@ -65,10 +68,11 @@ const MAX_ACCEPTABLE_ACCURACY = 50; // meters for claiming "precise"
 const MAX_IGNORABLE_AGE_MS = 25_000; // consider readings older than this stale
 const INITIAL_POLL_DURATION_MS = 30_000; // how long to aggressively poll getCurrentPosition
 const INITIAL_POLL_INTERVAL_MS = 3000; // poll every 3s during initial period
-const TOAST_THROTTLE_MS = 4000;
+const TOAST_THROTTLE_MS = 12000;
 const MAX_IMAGES_PER_POST = 10;
 let cachedAuthorName = null;
 const THEME_KEY = "bicol-ip-theme";
+const POLICY_KEY = "bicol-ip-policy-v1";
 
 // Buffers and state
 let positionsBuffer = []; // {lat,lng,accuracy,timestamp}
@@ -140,6 +144,41 @@ function initTheme() {
   }
   const prefersLight = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
   applyTheme(prefersLight ? "light" : "dark");
+}
+
+function initPolicyGate() {
+  if (!policyDialog) return;
+  if (localStorage.getItem(POLICY_KEY) === "agreed") return;
+  policyDialog.addEventListener("cancel", (e) => e.preventDefault());
+  policyDialog.showModal();
+
+  const choices = Array.from(document.querySelectorAll('input[name="policyChoice"]'));
+  const updateState = () => {
+    const selected = choices.find((c) => c.checked)?.value;
+    if (selected === "agree") {
+      policyProceed.disabled = false;
+      policyNote.textContent = "Thanks for agreeing. You can proceed.";
+      policyNote.style.color = "var(--accent-2)";
+    } else if (selected === "disagree") {
+      policyProceed.disabled = true;
+      policyNote.textContent = "You must agree to continue using the site.";
+      policyNote.style.color = "var(--muted)";
+    } else {
+      policyProceed.disabled = true;
+      policyNote.textContent = "Select an option to continue.";
+      policyNote.style.color = "var(--muted)";
+    }
+  };
+  choices.forEach((c) => c.addEventListener("change", updateState));
+  updateState();
+
+  policyProceed?.addEventListener("click", () => {
+    const selected = choices.find((c) => c.checked)?.value;
+    if (selected !== "agree") return;
+    localStorage.setItem(POLICY_KEY, "agreed");
+    policyDialog.close();
+    showToast("Thanks for agreeing to the policy.", "success");
+  });
 }
 
 function normalizeContent(html) {
@@ -383,16 +422,16 @@ function onLocationError(error) {
   console.error("Location error:", error);
   switch (error.code) {
     case error.PERMISSION_DENIED:
-      showToast("Location permission denied. Allow access in your browser settings.", "error");
+      safeShowToast("Location permission denied. Allow access in your browser settings.", "error");
       break;
     case error.POSITION_UNAVAILABLE:
-      showToast("Position unavailable. Ensure device location services are enabled.", "warn");
+      safeShowToast("Position unavailable. Ensure device location services are enabled.", "warn");
       break;
     case error.TIMEOUT:
-      showToast("Location request timed out. Try again or move to a location with better signal.", "warn");
+      safeShowToast("Location request timed out. Try again or move to a location with better signal.", "warn");
       break;
     default:
-      showToast("Unable to retrieve location. Check permissions and try again.", "warn");
+      safeShowToast("Unable to retrieve location. Check permissions and try again.", "warn");
       break;
   }
   stopTracking();
@@ -466,7 +505,7 @@ async function toggleLocationTracking() {
   }
 
   if (!navigator.geolocation) {
-    showToast("Geolocation is not supported by your browser.", "error");
+    safeShowToast("Geolocation is not supported by your browser.", "error");
     return;
   }
 
@@ -475,7 +514,7 @@ async function toggleLocationTracking() {
     try {
       const perm = await navigator.permissions.query({ name: "geolocation" });
       if (perm.state === "denied") {
-        showToast("Location access is denied. Please enable it in your browser.", "error");
+        safeShowToast("Location access is denied. Please enable it in your browser.", "error");
         return;
       }
     } catch (e) {
@@ -514,7 +553,7 @@ async function toggleLocationTracking() {
     });
   } catch (e) {
     console.error("Failed to start watchPosition:", e);
-    showToast("Failed to start location tracking.", "error");
+    safeShowToast("Failed to start location tracking.", "error");
     isTracking = false;
     if (trackLocationBtn) trackLocationBtn.disabled = false;
     return;
@@ -709,6 +748,7 @@ mobileLoginBtn?.addEventListener("click", () => {
 
 mobileLogoutBtn?.addEventListener("click", async () => {
   await logout();
+  showToast("Logged out successfully.", "success");
   mobileMenu.classList.remove("open");
   menuToggle.setAttribute("aria-expanded", "false");
 });
@@ -747,6 +787,7 @@ emailForm.addEventListener("submit", async (e) => {
   }
   try {
     await loginWithEmail(email, password);
+    showToast("Logged in successfully.", "success");
     authDialog.close();
   } catch (err) {
     showToast("Email sign-in failed: " + err.message, "error");
@@ -756,7 +797,10 @@ emailForm.addEventListener("submit", async (e) => {
 document.getElementById("createAccountBtn")?.addEventListener("click", () => {
   window.location.href = "signup.html";
 });
-logoutBtn?.addEventListener("click", async () => await logout());
+logoutBtn?.addEventListener("click", async () => {
+  await logout();
+  showToast("Logged out successfully.", "success");
+});
 
 // Password toggle (login)
 toggleLoginPass?.addEventListener("click", () => {
@@ -909,7 +953,7 @@ userSavePostBtn?.addEventListener("click", async () => {
 
   try {
     await savePost({ title, content, media, author: authorName });
-    showToast("Post published", "success");
+    showToast("Post published successfully.", "success");
     userPostDialog.close();
     await loadPosts();
   } catch (e) {
@@ -971,6 +1015,7 @@ window.addEventListener("landmarks-updated", () => {
 
 // Initial Execution
 initTheme();
+initPolicyGate();
 // Real-time posts
 postsUnsub = observePosts((posts) => {
   renderPosts(posts);
