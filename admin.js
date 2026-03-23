@@ -45,9 +45,9 @@ let pickingMode = false;
 
 /* Toolbar binding (uses document.execCommand for simple rich editor controls) */
 function bindToolbar() {
-  const toolbar = document.querySelector(".toolbar");
-  const buttons = Array.from(document.querySelectorAll(".toolbar button"));
-  const selects = Array.from(document.querySelectorAll(".toolbar select"));
+  const toolbar = adminPanel?.querySelector(".toolbar");
+  const buttons = toolbar ? Array.from(toolbar.querySelectorAll("button")) : [];
+  const selects = toolbar ? Array.from(toolbar.querySelectorAll("select")) : [];
   const stateful = [
     "bold",
     "italic",
@@ -58,6 +58,12 @@ function bindToolbar() {
     "justifyCenter",
     "justifyRight",
   ];
+  const focusEditor = () => editor?.focus({ preventScroll: true });
+  const normalizeBlockValue = (value) => {
+    if (!value) return value;
+    if (value.startsWith("<")) return value;
+    return `<${value}>`;
+  };
 
   function updateStates() {
     buttons.forEach((btn) => {
@@ -78,9 +84,16 @@ function bindToolbar() {
     if (!btn) return;
     const cmd = btn.dataset.cmd;
     const value = btn.dataset.value || null;
+    focusEditor();
     if (cmd === "createLink") {
       const url = prompt("Enter URL (https://...)");
       if (url) document.execCommand(cmd, false, url);
+    } else if (cmd === "formatBlock") {
+      try {
+        document.execCommand(cmd, false, normalizeBlockValue(value || "p"));
+      } catch (err) {
+        console.warn("execCommand failed:", cmd, err);
+      }
     } else {
       try {
         document.execCommand(cmd, false, value);
@@ -88,8 +101,10 @@ function bindToolbar() {
         console.warn("execCommand failed:", cmd, err);
       }
     }
-    editor?.focus();
     updateStates();
+  });
+  toolbar?.addEventListener("mousedown", (e) => {
+    if (e.target.closest("button")) e.preventDefault();
   });
 
   selects.forEach((sel) =>
@@ -97,12 +112,20 @@ function bindToolbar() {
       const cmd = sel.dataset.cmd;
       const value = sel.value || "";
       if (!cmd || !value) return;
+      focusEditor();
+      if (cmd === "formatBlock") {
+        try {
+          document.execCommand(cmd, false, normalizeBlockValue(value));
+        } catch (err) {
+          console.warn("execCommand failed:", cmd, err);
+        }
+        return;
+      }
       try {
         document.execCommand(cmd, false, value);
       } catch (err) {
         console.warn("execCommand failed:", cmd, err);
       }
-      editor?.focus();
     })
   );
 
