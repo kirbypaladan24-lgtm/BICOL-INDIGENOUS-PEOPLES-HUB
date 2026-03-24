@@ -166,10 +166,11 @@ a {
   color: var(--text);
   padding: 0 10px;
   font: inherit;
+  background-color: #0f1911 ; 
 }
 
 .language-select:focus {
-  outline: 2px solid rgba(90, 154, 106, 0.45);
+  outline: 2px solid rgba(47, 77, 54, 0.45);
   outline-offset: 1px;
 }
 
