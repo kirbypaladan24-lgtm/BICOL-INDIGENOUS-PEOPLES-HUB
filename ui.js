@@ -1,4 +1,5 @@
 // ui.js
+import { t } from "./i18n.js";
 const toastEl = document.getElementById("toast");
 const lightbox = document.getElementById("mediaLightbox");
 const lightboxCloseBtn = document.getElementById("lightboxClose");
@@ -104,7 +105,7 @@ function setLightboxImageImmediate(index) {
     sliderContainer.style.aspectRatio = `${item.width} / ${item.height}`;
   }
   active.src = item.src;
-  active.alt = item.alt || "Post media";
+  active.alt = item.alt || t("post_media_alt");
   active.style.visibility = "visible";
   other.style.visibility = "hidden";
   other.src = "";
@@ -146,7 +147,7 @@ async function animateToIndex(targetIndex, direction = 1) {
   incoming.style.visibility = "visible";
   incoming.style.transform = `translateX(${direction > 0 ? "100%" : "-100%"})`;
   incoming.src = item.src;
-  incoming.alt = item.alt || "Post media";
+  incoming.alt = item.alt || t("post_media_alt");
   // force reflow
   // eslint-disable-next-line no-unused-expressions
   incoming.offsetHeight;
@@ -195,7 +196,7 @@ function normalizeItems(itemsOrNull) {
   });
 }
 
-function openLightbox(src, alt = "Post media full size", items = null, startIndex = 0) {
+function openLightbox(src, alt = t("post_media_full"), items = null, startIndex = 0) {
   const norm = normalizeItems(items) || (src ? [{ src: new URL(String(src), location.href).href, alt }] : [{ src, alt }]);
   const seen = new Set();
   lightboxItems = norm.filter((it) => {
@@ -324,8 +325,8 @@ function buildInstaCarousel(media = [], title = "") {
     if (!img) return;
     ev.stopPropagation();
     const realIndex = Number(img.dataset.realIndex) || 0;
-    const items = media.map((u) => ({ src: u, alt: title || "Post media" }));
-    openLightbox(media[realIndex], title || "Post media", items, realIndex);
+    const items = media.map((u) => ({ src: u, alt: title || t("post_media_alt") }));
+    openLightbox(media[realIndex], title || t("post_media_alt"), items, realIndex);
   });
 
   if (count > 1) {
@@ -345,7 +346,7 @@ function buildInstaCarousel(media = [], title = "") {
     const prevBtn = document.createElement("button");
     prevBtn.className = "insta-nav insta-prev";
     prevBtn.type = "button";
-    prevBtn.title = "Previous";
+    prevBtn.title = t("previous");
     prevBtn.innerHTML = "‹";
     prevBtn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -356,7 +357,7 @@ function buildInstaCarousel(media = [], title = "") {
     const nextBtn = document.createElement("button");
     nextBtn.className = "insta-nav insta-next";
     nextBtn.type = "button";
-    nextBtn.title = "Next";
+    nextBtn.title = t("next");
     nextBtn.innerHTML = "›";
     nextBtn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -435,7 +436,7 @@ export function renderPosts(posts) {
   posts.forEach((p) => {
     const article = document.createElement("article");
     article.className = "post-row";
-    const author = (p.author || "Contributor").trim();
+    const author = (p.author || t("contributor")).trim();
     const avatar = author ? author.charAt(0).toUpperCase() : "C";
 
     // parse update date
@@ -449,7 +450,9 @@ export function renderPosts(posts) {
       const parsed = new Date(p.updatedAt.seconds * 1000);
       if (!isNaN(parsed)) updated = parsed;
     }
-    const meta = updated ? `Updated ${updated.toLocaleDateString()}` : "Recently shared";
+    const meta = updated
+      ? `${t("updated_prefix")} ${updated.toLocaleDateString()}`
+      : t("recently_shared");
 
     // header
     const header = document.createElement("header");
@@ -466,7 +469,7 @@ export function renderPosts(posts) {
     // title & body
     const titleEl = document.createElement("h4");
     titleEl.className = "post-title";
-    titleEl.textContent = p.title || "Untitled post";
+    titleEl.textContent = p.title || t("untitled_post");
     article.appendChild(titleEl);
 
     const body = document.createElement("div");
@@ -494,10 +497,10 @@ export function renderPosts(posts) {
           body.classList.add("collapsed");
           const toggleBtn = document.createElement("button");
           toggleBtn.className = "post-toggle";
-          toggleBtn.textContent = "See more";
+          toggleBtn.textContent = t("see_more");
           toggleBtn.addEventListener("click", () => {
             const isCollapsed = body.classList.toggle("collapsed");
-            toggleBtn.textContent = isCollapsed ? "See more" : "See less";
+            toggleBtn.textContent = isCollapsed ? t("see_more") : t("see_less");
           });
           body.after(toggleBtn);
         }
@@ -516,7 +519,7 @@ export function renderPosts(posts) {
     const bodyImgs = Array.from(body.querySelectorAll("img")).map((i) => resolveUrl(i.src)).filter(Boolean);
     const mediaResolved = (mediaArray || []).map((m) => resolveUrl(m));
     const allItemsSrc = Array.from(new Set([...mediaResolved, ...bodyImgs]));
-    const items = allItemsSrc.map((src) => ({ src, alt: p.title || "Post media" }));
+    const items = allItemsSrc.map((src) => ({ src, alt: p.title || t("post_media_alt") }));
 
     const images = Array.from(article.querySelectorAll("img"));
     images.forEach((imgEl) => {
@@ -532,7 +535,7 @@ export function renderPosts(posts) {
         if (anchor) ev.preventDefault();
         const clickedSrc = resolveUrl(imgEl.src);
         const startIndex = items.findIndex((it) => it.src === clickedSrc);
-        openLightbox(clickedSrc, p.title || "Post media", items, startIndex >= 0 ? startIndex : 0);
+        openLightbox(clickedSrc, p.title || t("post_media_alt"), items, startIndex >= 0 ? startIndex : 0);
       });
     });
 
@@ -562,9 +565,9 @@ export function renderPosts(posts) {
     const share = document.createElement("div");
     share.className = "post-share";
     share.innerHTML = `
-      <button class="share-btn" type="button">Share</button>
+      <button class="share-btn" type="button">${t("share")}</button>
       <div class="share-menu hidden">
-        <button class="share-item" data-action="copy">Copy link</button>
+        <button class="share-item" data-action="copy">${t("copy_link")}</button>
         <a class="share-item" data-platform="facebook" target="_blank" rel="noopener noreferrer">Facebook</a>
         <a class="share-item" data-platform="twitter" target="_blank" rel="noopener noreferrer">X (Twitter)</a>
         <a class="share-item" data-platform="messenger" target="_blank" rel="noopener noreferrer">Messenger</a>
@@ -587,7 +590,7 @@ function bindShare(article, post) {
   const menu = article.querySelector(".share-menu");
   if (!btn || !menu) return;
   const id = post?.id || "";
-  const title = post?.title || "Bicol Indigenous Peoples Hub";
+  const title = post?.title || t("page_title");
   const url = id ? `${location.origin}${location.pathname}#post-${id}` : location.href;
   article.id = id ? `post-${id}` : "";
 
@@ -798,9 +801,9 @@ function addYouTubePreviews(root) {
     wrapper.className = "link-preview";
     wrapper.innerHTML = `
       <a href="${href}" target="_blank" rel="noopener noreferrer">
-        <img src="${thumb}" alt="YouTube preview" loading="lazy" />
+        <img src="${thumb}" alt="${t("youtube_preview_alt")}" loading="lazy" />
         <div class="link-meta">
-          <span class="link-title">YouTube Video</span>
+          <span class="link-title">${t("youtube_video")}</span>
           <span class="link-url">${href}</span>
         </div>
       </a>
@@ -900,12 +903,12 @@ function getYouTubeId(url) {
         // If the post's carousel exists, it will create .insta-slide images; order preserved by DOM
         const uniq = Array.from(new Set(allImgs));
         const title = article.querySelector(".post-title")?.textContent || "";
-        const items = uniq.map((src) => ({ src, alt: title || "Post media" }));
+        const items = uniq.map((src) => ({ src, alt: title || t("post_media_alt") }));
         const clickedSrc = resolveUrl(upImg.src);
         const idx = uniq.indexOf(clickedSrc);
         // mark time to prevent immediate duplicate
         upImg.__lastOpenAt = Date.now();
-        openLightbox(clickedSrc, title || "Post media", items, idx >= 0 ? idx : 0);
+        openLightbox(clickedSrc, title || t("post_media_alt"), items, idx >= 0 ? idx : 0);
         // prevent default navigation when image inside anchor
         const anchor = upImg.closest("a");
         if (anchor) e.preventDefault();
@@ -945,12 +948,12 @@ document.addEventListener("click", (ev) => {
     const allImgs = Array.from(article.querySelectorAll("img")).map((i) => resolveUrl(i.src));
     const uniq = Array.from(new Set(allImgs));
     const title = article.querySelector(".post-title")?.textContent || "";
-    const items = uniq.map((src) => ({ src, alt: title || "Post media" }));
+    const items = uniq.map((src) => ({ src, alt: title || t("post_media_alt") }));
     const clickedSrc = resolveUrl(img.src);
     const idx = uniq.indexOf(clickedSrc);
     img.__lightboxBound = true;
     img.style.cursor = "pointer";
-    openLightbox(clickedSrc, title || "Post media", items, idx >= 0 ? idx : 0);
+    openLightbox(clickedSrc, title || t("post_media_alt"), items, idx >= 0 ? idx : 0);
   } catch (e) {}
 });
 
