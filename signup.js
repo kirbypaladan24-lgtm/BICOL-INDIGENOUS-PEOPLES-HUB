@@ -39,23 +39,38 @@ form.addEventListener("submit", async (e) => {
     showToast("Username is required.", "warn");
     return;
   }
+  
+  console.log('Starting account creation for:', email);
+  
   try {
-    await createAccountWithProfile({ email, password, username, phone, birthdate });
-    showToast("Account created! Redirecting to login...");
+    const user = await createAccountWithProfile({ email, password, username, phone, birthdate });
+    console.log('Account created successfully:', user.uid);
+    showToast("Account created! Redirecting to login...", "success");
     setTimeout(() => (window.location.href = "index.html"), 1200);
   } catch (err) {
+    console.error("Signup error:", err);
+    
     if (err.code === "auth/email-already-in-use") {
       // Try to log in with the same credentials; if password is wrong, inform the user.
       try {
+        console.log('Email already in use, attempting login...');
         await loginWithEmail(email, password);
-        showToast("Email already registered. Logging you in...");
+        showToast("Email already registered. Logging you in...", "success");
         setTimeout(() => (window.location.href = "index.html"), 800);
         return;
       } catch (loginErr) {
+        console.error("Auto-login failed:", loginErr);
         showToast("Email already in use. Use Login or reset your password.", "error");
         return;
       }
     }
+    
+    // Handle specific Firestore errors
+    if (err.message && err.message.includes('Firestore sync failed')) {
+      showToast("Account created but profile sync failed. Please contact support.", "error");
+      return;
+    }
+    
     showToast("Signup failed: " + err.message, "error");
   }
 });
