@@ -693,10 +693,13 @@ function bindReactions(article, post) {
     try {
       const { updatePostReactions } = await import("./auth.js");
       await updatePostReactions(id, { likeDelta, dislikeDelta });
+      console.log('✅ Like updated for post:', id);
     } catch (e) {
+      console.error('❌ Like failed for post:', id, e);
       // revert on failure
       if (likeDelta) adjust(likeCountEl, -likeDelta);
       if (dislikeDelta) adjust(dislikeCountEl, -dislikeDelta);
+      showToast("Failed to save like. Please try again.", "error");
     }
   });
 
@@ -727,9 +730,12 @@ function bindReactions(article, post) {
     try {
       const { updatePostReactions } = await import("./auth.js");
       await updatePostReactions(id, { likeDelta, dislikeDelta });
+      console.log('✅ Dislike updated for post:', id);
     } catch (e) {
+      console.error('❌ Dislike failed for post:', id, e);
       if (likeDelta) adjust(likeCountEl, -likeDelta);
       if (dislikeDelta) adjust(dislikeCountEl, -dislikeDelta);
+      showToast("Failed to save dislike. Please try again.", "error");
     }
   });
 }
@@ -830,12 +836,6 @@ function getYouTubeId(url) {
 }
 
 /* ---------- Capture-phase pointer tap detector (robust for carousels) ---------- */
-/*
- This runs before other pointer handlers (capture: true) and detects quick taps
- (small movement + short duration). When a tap occurs on an image inside .post-row
- it opens the lightbox with that post's images. This reliably handles cases where
- carousel pointer capture or drag logic suppress clicks.
-*/
 (function installCaptureTapDetector() {
   const TAP_MOVE_THRESHOLD = 12; // px
   const TAP_TIME_THRESHOLD = 450; // ms
