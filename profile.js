@@ -80,7 +80,9 @@ async function resolveAuthorName() {
       cachedAuthorName = profile.username;
       return cachedAuthorName;
     }
-  } catch (e) {}
+  } catch (e) {
+    console.warn("Profile lookup failed", e);
+  }
   if (currentUser.displayName) {
     cachedAuthorName = currentUser.displayName;
     return cachedAuthorName;
@@ -228,37 +230,46 @@ function showExistingMedia(media) {
 async function loadProfilePosts() {
   if (!currentUser) return;
   const authorName = await resolveAuthorName();
-  const posts = await fetchPosts();
-  const owned = posts.filter((p) => isOwnedPost(p, authorName));
-  profileStatus.textContent = owned.length ? `You have ${owned.length} post(s).` : "You haven't shared any posts yet.";
-  renderPosts(owned);
+  try {
+    // CRITICAL: Force server read for production P2P reliability
+    const posts = await fetchPosts(true);
+    const owned = posts.filter((p) => isOwnedPost(p, authorName));
+    profileStatus.textContent = owned.length ? `You have ${owned.length} post(s).` : "You haven't shared any posts yet.";
+    renderPosts(owned);
+  } catch (e) {
+    console.error("Failed to load profile posts:", e);
+    profileStatus.textContent = "Error loading posts. Please refresh.";
+    showToast("Failed to load posts: " + (e.message || e), "error");
+  }
 }
 
 profilePosts?.addEventListener("click", (e) => {
   const btn = e.target.closest("[data-action='edit']");
   if (!btn) return;
   const id = btn.dataset.id;
-  const postCard = btn.closest(".post-row");
-  const posts = Array.from(profilePosts.querySelectorAll(".post-row"));
-  const idx = posts.indexOf(postCard);
-  const postData = idx >= 0 ? null : null;
   loadEditById(id);
 });
 
 async function loadEditById(id) {
-  const posts = await fetchPosts();
-  const target = posts.find((p) => p.id === id);
-  if (!target) {
-    showToast("Post not found.", "warn");
-    return;
+  try {
+    // CRITICAL: Force server read for edit to get fresh data
+    const posts = await fetchPosts(true);
+    const target = posts.find((p) => p.id === id);
+    if (!target) {
+      showToast("Post not found.", "warn");
+      return;
+    }
+    currentEditPost = target;
+    currentMedia = Array.isArray(target.media) ? target.media : target.coverUrl ? [target.coverUrl] : [];
+    profilePostTitle.value = target.title || "";
+    profileEditor.innerHTML = target.content || "";
+    profileImageInput.value = "";
+    showExistingMedia(currentMedia);
+    editDialog.showModal();
+  } catch (e) {
+    console.error("Failed to load post for editing:", e);
+    showToast("Failed to load post: " + (e.message || e), "error");
   }
-  currentEditPost = target;
-  currentMedia = Array.isArray(target.media) ? target.media : target.coverUrl ? [target.coverUrl] : [];
-  profilePostTitle.value = target.title || "";
-  profileEditor.innerHTML = target.content || "";
-  profileImageInput.value = "";
-  showExistingMedia(currentMedia);
-  editDialog.showModal();
 }
 
 profileImageInput?.addEventListener("change", () => {
@@ -295,6 +306,7 @@ profileSaveBtn?.addEventListener("click", async () => {
     try {
       media = await uploadImages(selected);
     } catch (e) {
+      console.error("Image upload failed:", e);
       showToast("Image upload failed. Keeping existing images.", "warn");
       media = currentMedia;
     }
@@ -312,8 +324,10 @@ profileSaveBtn?.addEventListener("click", async () => {
     });
     showToast("Post updated successfully.", "success");
     editDialog.close();
+    // CRITICAL: Force server read after save
     await loadProfilePosts();
   } catch (e) {
+    console.error("Update failed:", e);
     showToast("Update failed: " + (e.message || e), "error");
   } finally {
     saving = false;
@@ -325,13 +339,23 @@ profileSaveBtn?.addEventListener("click", async () => {
 closeEdit?.addEventListener("click", () => editDialog.close());
 
 logoutBtn?.addEventListener("click", async () => {
-  await logout();
-  window.location.href = "index.html";
+  try {
+    await logout();
+    window.location.href = "index.html";
+  } catch (e) {
+    console.error("Logout failed:", e);
+    showToast("Logout failed: " + (e.message || e), "error");
+  }
 });
 
 mobileLogoutBtn?.addEventListener("click", async () => {
-  await logout();
-  window.location.href = "index.html";
+  try {
+    await logout();
+    window.location.href = "index.html";
+  } catch (e) {
+    console.error("Logout failed:", e);
+    showToast("Logout failed: " + (e.message || e), "error");
+  }
 });
 
 async function triggerPasswordReset() {
@@ -373,6 +397,7 @@ changePassForm?.addEventListener("submit", async (e) => {
     showToast("Password updated successfully.", "success");
     changePassDialog.close();
   } catch (err) {
+    console.error("Password change failed:", err);
     showToast("Current password is incorrect.", "error");
   }
 });
@@ -402,6 +427,7 @@ observeAuth(async (user) => {
     profilePosts.innerHTML = "";
     return;
   }
+  
   try {
     const profile = await getUserProfile(currentUser.uid);
     const username =
@@ -412,10 +438,13 @@ observeAuth(async (user) => {
     cachedAuthorName = username;
     renderProfileIdentity({ username, email });
   } catch (e) {
+    console.warn("Failed to load profile, using fallback:", e);
     const fallbackName = currentUser.email ? currentUser.email.split("@")[0] : "Contributor";
     cachedAuthorName = fallbackName;
     renderProfileIdentity({ username: fallbackName, email: currentUser.email || "--" });
   }
+  
+  // Load posts with forced server read
   await loadProfilePosts();
 });
 
