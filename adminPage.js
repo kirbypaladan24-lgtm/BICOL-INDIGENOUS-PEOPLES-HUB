@@ -18,8 +18,13 @@ const mobileChangePassBtn = document.getElementById("mobileChangePassBtn");
 const mobileLogoutBtn = document.getElementById("mobileLogoutBtn");
 
 logoutBtn?.addEventListener("click", async () => {
-  await logout();
-  window.location.href = "index.html";
+  try {
+    await logout();
+    window.location.href = "index.html";
+  } catch (e) {
+    console.error("Logout failed:", e);
+    showToast("Logout failed: " + (e.message || e), "error");
+  }
 });
 
 async function triggerPasswordReset() {
@@ -61,18 +66,25 @@ changePassForm?.addEventListener("submit", async (e) => {
     showToast("Password updated successfully.", "success");
     changePassDialog.close();
   } catch (err) {
+    console.error("Password change failed:", err);
     showToast("Current password is incorrect.", "error");
   }
 });
 
 mobileLogoutBtn?.addEventListener("click", async () => {
-  await logout();
-  window.location.href = "index.html";
+  try {
+    await logout();
+    window.location.href = "index.html";
+  } catch (e) {
+    console.error("Logout failed:", e);
+    showToast("Logout failed: " + (e.message || e), "error");
+  }
 });
 
 // reuse theme toggle logic
 const savedTheme = localStorage.getItem("theme");
 if (savedTheme === "light") document.documentElement.setAttribute("data-theme", "light");
+
 themeToggle?.addEventListener("click", () => {
   const isLight = document.documentElement.getAttribute("data-theme") === "light";
   if (isLight) {
@@ -106,5 +118,10 @@ observeAuth(async (user) => {
     window.location.href = "index.html";
     return;
   }
+  
+  // Log connection info for debugging
+  console.log('Admin page loaded for user:', user.uid);
+  console.log('Run verifyFirestore() in console to test connection');
+  
   await initAdmin(user);
 });
