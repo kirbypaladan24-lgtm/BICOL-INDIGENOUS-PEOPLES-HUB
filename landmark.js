@@ -37,29 +37,41 @@ async function loadLandmark() {
     showToast("Landmark not found.", "error");
     return;
   }
+  
+  console.log('Loading landmark:', id);
+  
   try {
+    // CRITICAL: Force server read for production P2P reliability
     const item = await fetchLandmark(id, true);
+    
     if (!item) {
+      console.error('Landmark not found in database:', id);
       showToast("Landmark not found.", "error");
       return;
     }
+    
+    console.log('Landmark loaded:', item.name);
+    
     const titleEl = document.getElementById("landmarkTitleMain");
     const summaryEl = document.getElementById("landmarkSummary");
     const coverEl = document.getElementById("landmarkCover");
+    
     if (titleEl) titleEl.textContent = item.name || "Landmark";
     document.title = `${item.name || "Landmark"} | Bicol IP Hub`;
+    
     if (summaryEl) {
       summaryEl.textContent = item.summary || "";
       linkifyElement(summaryEl);
       addYouTubePreviews(summaryEl);
     }
+    
     if (item.coverUrl && coverEl) {
       coverEl.style.display = "block";
       coverEl.innerHTML = `<img src="${item.coverUrl}" alt="${item.name || "Landmark"}" style="width:100%; border-radius:12px; display:block;"/>`;
     }
   } catch (e) {
-    console.error("Load landmark failed", e);
-    showToast("Failed to load landmark.", "error");
+    console.error("Load landmark failed:", e);
+    showToast("Failed to load landmark: " + (e.message || e), "error");
   }
 }
 
