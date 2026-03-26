@@ -1106,6 +1106,10 @@ userSavePostBtn?.addEventListener("click", async () => {
     } catch (e) {
       console.error("Image uploads failed:", e);
       showToast(t("toast_upload_failed"), "warn");
+      userPostSubmitting = false;
+      userSavePostBtn.textContent = t("publish");
+      userSavePostBtn.disabled = false;
+      return;
     }
   }
 
