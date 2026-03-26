@@ -66,7 +66,51 @@
       </div>
     </div>
 
-    <main class="section">
+    <main class="section profile-dashboard">
+      <section class="profile-overview-shell">
+        <div class="profile-overview-card">
+          <div class="profile-overview-copy">
+            <p class="eyebrow">Workspace</p>
+            <h2>Your dashboard</h2>
+            <p id="profileStatus" class="section-desc">Loading your workspace...</p>
+          </div>
+          <div class="profile-identity">
+            <p><strong>Username:</strong> <span id="profileUsername">--</span></p>
+            <p><strong>Email:</strong> <span id="profileEmail">--</span></p>
+            <p><strong>Access:</strong> <span id="profileRole">Guest</span></p>
+          </div>
+        </div>
+
+        <div class="profile-summary-grid">
+          <article class="profile-stat-card">
+            <span class="profile-stat-label">Your Posts</span>
+            <strong id="profileOwnedCount">0</strong>
+            <p>Stories connected to your account.</p>
+          </article>
+          <article class="profile-stat-card">
+            <span class="profile-stat-label">Community Posts</span>
+            <strong id="profileCommunityCount">0</strong>
+            <p>Total published stories across the hub.</p>
+          </article>
+          <article class="profile-stat-card">
+            <span class="profile-stat-label">Mapped Landmarks</span>
+            <strong id="profileLandmarkCount">0</strong>
+            <p>Active places currently visible on the map.</p>
+          </article>
+          <article class="profile-stat-card">
+            <span class="profile-stat-label">Workspace</span>
+            <strong id="profileAdminTools">Profile</strong>
+            <p id="profileWorkspaceNote">Manage your account and personal posts here.</p>
+          </article>
+        </div>
+
+        <div class="profile-quick-actions">
+          <a href="#profilePostsSection" class="ghost small">Your Posts</a>
+          <a href="#adminPanel" id="adminQuickLink" class="ghost small hidden">Admin Tools</a>
+          <a href="#landmarkWorkspace" id="landmarkQuickLink" class="ghost small hidden">Landmarks</a>
+        </div>
+      </section>
+
       <section id="adminPanel" class="admin hidden profile-admin-panel">
         <div class="admin-bar">
           <div class="admin-heading">
@@ -79,7 +123,7 @@
             <p id="adminStatus">Restricted</p>
           </div>
         </div>
-        <div class="admin-grid admin-grid-posts">
+        <div id="profileEditTools" class="admin-grid admin-grid-posts">
           <div class="form admin-card">
             <div class="admin-card-head">
               <div>
@@ -136,7 +180,7 @@
           </div>
         </div>
 
-        <div class="admin-grid admin-grid-landmarks">
+        <div id="landmarkWorkspace" class="admin-grid admin-grid-landmarks">
           <div class="form admin-card">
             <div class="admin-card-head">
               <div>
@@ -198,19 +242,17 @@
         </div>
       </section>
 
+      <section id="profilePostsSection" class="profile-posts-section">
       <div class="section-head">
         <div>
-          <p class="eyebrow">Profile</p>
+          <p class="eyebrow">Personal Library</p>
           <h3>Your posts</h3>
-          <p id="profileStatus" class="section-desc">Loading your posts...</p>
-          <div class="profile-identity">
-            <p><strong>Username:</strong> <span id="profileUsername">--</span></p>
-            <p><strong>Email:</strong> <span id="profileEmail">--</span></p>
-          </div>
+          <p class="section-desc">Review and manage the stories tied to your account.</p>
         </div>
       </div>
       <div id="profilePosts" class="posts-feed"></div>
       <div id="profileEmpty" class="empty hidden">No posts yet.</div>
+      </section>
     </main>
 
     <div id="toast" class="toast hidden"></div>
