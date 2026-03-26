@@ -1,7 +1,7 @@
 // sw.js - Service Worker for Bicol IP Hub
 // Provides offline caching for assets, posts, and map tiles
 
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const STATIC_CACHE = `bicol-ip-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `bicol-ip-dynamic-${CACHE_VERSION}`;
 const IMAGE_CACHE = `bicol-ip-images-${CACHE_VERSION}`;
@@ -94,9 +94,19 @@ function getCacheStrategy(url) {
   if (url.includes('googleapis.com') || url.includes('firebaseio.com')) {
     return 'network-only';
   }
+
+  // Never cache local API endpoints or runtime config.
+  if (urlObj.origin === location.origin && urlObj.pathname.startsWith('/api/')) {
+    return 'network-only';
+  }
   
-  // Static assets (JS, CSS, HTML)
-  if (url.match(/\.(js|css|html)$/i) || urlObj.pathname === '/') {
+  // Always prefer fresh HTML and JS so deployments aren't stuck on stale code.
+  if (url.match(/\.(js|html)$/i) || urlObj.pathname === '/') {
+    return 'network-first';
+  }
+
+  // CSS can still be cached aggressively.
+  if (url.match(/\.(css)$/i)) {
     return 'static';
   }
   
@@ -200,9 +210,15 @@ self.addEventListener('fetch', (event) => {
     case 'network-first':
       // Network-first with cache fallback
       event.respondWith(
-        fetch(request).catch(() => {
-          return caches.match(request);
-        })
+        fetch(request)
+          .then((response) => {
+            if (response.ok) {
+              const clone = response.clone();
+              caches.open(DYNAMIC_CACHE).then((cache) => cache.put(request, clone));
+            }
+            return response;
+          })
+          .catch(() => caches.match(request))
       );
       break;
       
