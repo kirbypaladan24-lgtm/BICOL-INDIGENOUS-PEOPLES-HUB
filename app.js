@@ -15,7 +15,7 @@ import {
   fetchLandmarks,
   ensureAnonAuth,
 } from "./auth.js";
-  import { renderPosts, showToast, setStats } from "./ui.js";
+import { renderPosts, showToast, setStats } from "./ui.js";
 import { uploadImages } from "./imgbb.js";
 import { initI18n, t } from "./i18n.js";
 import { initSecurity } from "./security.js";
