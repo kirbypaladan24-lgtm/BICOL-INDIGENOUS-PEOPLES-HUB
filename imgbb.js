@@ -58,20 +58,31 @@ async function blobToBase64(blobOrFile) {
 
 async function uploadOne(blobOrFile, filename = "upload.jpg") {
   const image = await blobToBase64(blobOrFile);
+  const payloadBody = JSON.stringify({
+    image,
+    name: filename,
+  });
   const res = await fetch("/api/imgbb-upload", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      image,
-      name: filename,
-    }),
+    body: payloadBody,
   });
 
   const payload = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(payload?.error || "Image upload failed");
+    const proxyError = payload?.error || "Image upload failed";
+    const publicKey =
+      (typeof window !== "undefined" && window.__PUBLIC_UPLOAD_CONFIG__?.imgbbKey) ||
+      (typeof import.meta !== "undefined" && import.meta.env?.VITE_IMGBB_KEY) ||
+      "";
+
+    if (publicKey && /missing imgbb environment variable/i.test(proxyError)) {
+      return uploadDirectToImgBB(image, filename, publicKey);
+    }
+
+    throw new Error(proxyError);
   }
 
   if (!payload?.url) {
@@ -79,6 +90,32 @@ async function uploadOne(blobOrFile, filename = "upload.jpg") {
   }
 
   return payload.url;
+}
+
+async function uploadDirectToImgBB(image, filename, apiKey) {
+  const form = new URLSearchParams();
+  form.set("image", image);
+  form.set("name", filename);
+
+  const response = await fetch(`https://api.imgbb.com/1/upload?key=${encodeURIComponent(apiKey)}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: form,
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload?.error?.message || payload?.data?.error?.message || "Direct ImgBB upload failed");
+  }
+
+  const url = payload?.data?.display_url || payload?.data?.url || null;
+  if (!url) {
+    throw new Error("Direct ImgBB upload returned no image URL");
+  }
+
+  return url;
 }
 
 export async function uploadImages(files, options = {}) {
