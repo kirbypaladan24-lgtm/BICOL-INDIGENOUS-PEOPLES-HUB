@@ -42,6 +42,8 @@ let currentLandmarkCover = null;
 let landmarkMap = null;
 let landmarkMarker = null;
 let pickingMode = false;
+let toolbarBound = false;
+let landmarkBindingsBound = false;
 
 function showPostsSkeleton(container, count = 3) {
   if (!container) return;
@@ -61,6 +63,7 @@ function showPostsSkeleton(container, count = 3) {
 
 /* Toolbar binding (uses document.execCommand for simple rich editor controls) */
 function bindToolbar() {
+  if (toolbarBound) return;
   const toolbar = adminPanel?.querySelector(".toolbar");
   const buttons = toolbar ? Array.from(toolbar.querySelectorAll("button")) : [];
   const selects = toolbar ? Array.from(toolbar.querySelectorAll("select")) : [];
@@ -167,6 +170,8 @@ function bindToolbar() {
       updateStates();
     })
   );
+
+  toolbarBound = true;
 }
 
 /* Resolve author name using profile, displayName, or email */
@@ -352,6 +357,11 @@ async function initLandmarkMap() {
   if (!landmarkMapEl) return;
   await ensureLeaflet();
   landmarkMapEl.innerHTML = "";
+  if (landmarkMap) {
+    landmarkMap.remove();
+    landmarkMap = null;
+    landmarkMarker = null;
+  }
   landmarkMap = L.map(landmarkMapEl, {
     zoomControl: true,
     attributionControl: false,
@@ -586,46 +596,49 @@ export async function initAdmin(user) {
   if (saveLandmarkBtn && resetLandmarkBtn && landmarksList) {
     saveLandmarkBtn.onclick = handleSaveLandmark;
     resetLandmarkBtn.onclick = resetLandmarkForm;
-    landmarkPickBtn?.addEventListener("click", () => {
-      pickingMode = !pickingMode;
-      landmarkPickBtn.classList.toggle("active", pickingMode);
-      landmarkMapEl?.classList.toggle("picking", pickingMode);
-      showToast(pickingMode ? "Click the map to select a location." : "Map selection off.", "info");
-      if (pickingMode && landmarkMap) {
-        const center = landmarkMap.getCenter();
-        if (landmarkLat) landmarkLat.value = center.lat.toFixed(6);
-        if (landmarkLng) landmarkLng.value = center.lng.toFixed(6);
-        setLandmarkMarker(center.lat, center.lng, false);
-      }
-    });
-    landmarkLat?.addEventListener("change", () => {
-      const latRaw = landmarkLat.value;
-      const lngRaw = landmarkLng?.value;
-      if (latRaw === "" || lngRaw === "") {
-        if (landmarkMarker && landmarkMap) {
-          landmarkMap.removeLayer(landmarkMarker);
-          landmarkMarker = null;
+    if (!landmarkBindingsBound) {
+      landmarkPickBtn?.addEventListener("click", () => {
+        pickingMode = !pickingMode;
+        landmarkPickBtn.classList.toggle("active", pickingMode);
+        landmarkMapEl?.classList.toggle("picking", pickingMode);
+        showToast(pickingMode ? "Click the map to select a location." : "Map selection off.", "info");
+        if (pickingMode && landmarkMap) {
+          const center = landmarkMap.getCenter();
+          if (landmarkLat) landmarkLat.value = center.lat.toFixed(6);
+          if (landmarkLng) landmarkLng.value = center.lng.toFixed(6);
+          setLandmarkMarker(center.lat, center.lng, false);
         }
-        return;
-      }
-      const lat = Number(latRaw);
-      const lng = Number(lngRaw);
-      if (isFinite(lat) && isFinite(lng)) setLandmarkMarker(lat, lng);
-    });
-    landmarkLng?.addEventListener("change", () => {
-      const latRaw = landmarkLat?.value;
-      const lngRaw = landmarkLng.value;
-      if (latRaw === "" || lngRaw === "") {
-        if (landmarkMarker && landmarkMap) {
-          landmarkMap.removeLayer(landmarkMarker);
-          landmarkMarker = null;
+      });
+      landmarkLat?.addEventListener("change", () => {
+        const latRaw = landmarkLat.value;
+        const lngRaw = landmarkLng?.value;
+        if (latRaw === "" || lngRaw === "") {
+          if (landmarkMarker && landmarkMap) {
+            landmarkMap.removeLayer(landmarkMarker);
+            landmarkMarker = null;
+          }
+          return;
         }
-        return;
-      }
-      const lat = Number(latRaw);
-      const lng = Number(lngRaw);
-      if (isFinite(lat) && isFinite(lng)) setLandmarkMarker(lat, lng);
-    });
+        const lat = Number(latRaw);
+        const lng = Number(lngRaw);
+        if (isFinite(lat) && isFinite(lng)) setLandmarkMarker(lat, lng);
+      });
+      landmarkLng?.addEventListener("change", () => {
+        const latRaw = landmarkLat?.value;
+        const lngRaw = landmarkLng.value;
+        if (latRaw === "" || lngRaw === "") {
+          if (landmarkMarker && landmarkMap) {
+            landmarkMap.removeLayer(landmarkMarker);
+            landmarkMarker = null;
+          }
+          return;
+        }
+        const lat = Number(latRaw);
+        const lng = Number(lngRaw);
+        if (isFinite(lat) && isFinite(lng)) setLandmarkMarker(lat, lng);
+      });
+      landmarkBindingsBound = true;
+    }
     try {
       await initLandmarkMap();
     } catch (error) {
