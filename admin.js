@@ -43,6 +43,22 @@ let landmarkMap = null;
 let landmarkMarker = null;
 let pickingMode = false;
 
+function showPostsSkeleton(container, count = 3) {
+  if (!container) return;
+  container.innerHTML = "";
+  for (let i = 0; i < count; i += 1) {
+    const item = document.createElement("div");
+    item.className = "list-item";
+    item.innerHTML = `
+      <div>
+        <strong>Loading...</strong>
+        <div class="chip">Please wait</div>
+      </div>
+    `;
+    container.appendChild(item);
+  }
+}
+
 /* Toolbar binding (uses document.execCommand for simple rich editor controls) */
 function bindToolbar() {
   const toolbar = adminPanel?.querySelector(".toolbar");
@@ -559,8 +575,12 @@ export async function initAdmin(user) {
   saveBtn.onclick = handleSave;
   resetBtn.onclick = resetForm;
 
-  // load posts with forced server read
-  await loadAdminPosts();
+  try {
+    await loadAdminPosts();
+  } catch (error) {
+    console.error("Admin posts bootstrap failed:", error);
+    showToast("Failed to load admin posts.", "error");
+  }
 
   // landmarks panel (if present)
   if (saveLandmarkBtn && resetLandmarkBtn && landmarksList) {
@@ -606,8 +626,18 @@ export async function initAdmin(user) {
       const lng = Number(lngRaw);
       if (isFinite(lat) && isFinite(lng)) setLandmarkMarker(lat, lng);
     });
-    await initLandmarkMap();
-    // Load landmarks with forced server read
-    await loadLandmarks();
+    try {
+      await initLandmarkMap();
+    } catch (error) {
+      console.error("Admin landmark map failed to initialize:", error);
+      showToast("Failed to load the admin map.", "error");
+    }
+
+    try {
+      await loadLandmarks();
+    } catch (error) {
+      console.error("Admin landmarks bootstrap failed:", error);
+      showToast("Failed to load landmarks.", "error");
+    }
   }
 }
