@@ -24,7 +24,13 @@ function readFirebaseConfig() {
 
 export default function handler(_req, res) {
   const firebaseConfig = readFirebaseConfig();
-  const payload = `window.__FIREBASE_CONFIG__ = ${JSON.stringify(firebaseConfig)};`;
+  const publicUploadConfig = {
+    imgbbKey: process.env.VITE_IMGBB_KEY || "",
+  };
+  const payload = `
+window.__FIREBASE_CONFIG__ = ${JSON.stringify(firebaseConfig)};
+window.__PUBLIC_UPLOAD_CONFIG__ = ${JSON.stringify(publicUploadConfig)};
+`.trim();
 
   res.setHeader("Content-Type", "application/javascript; charset=utf-8");
   res.setHeader("Cache-Control", "no-store, max-age=0");
