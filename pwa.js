@@ -14,6 +14,7 @@ export async function registerServiceWorker() {
       try {
         const swUrl = new URL("./sw.js", import.meta.url);
         const registration = await navigator.serviceWorker.register(swUrl);
+        registration.update().catch(() => {});
         console.log("[PWA] Service worker registered:", registration.scope);
         resolve(registration);
       } catch (error) {
