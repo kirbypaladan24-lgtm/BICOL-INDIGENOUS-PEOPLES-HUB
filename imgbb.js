@@ -101,7 +101,7 @@ export async function uploadImages(files, options = {}) {
     } catch (error) {
       failed++;
       console.error("Image upload failed for file", file.name, error);
-      showToast(`Image failed: ${file.name}`, "warn");
+      showToast(`Image failed: ${file.name} (${error?.message || "upload error"})`, "warn");
     }
   }
 
