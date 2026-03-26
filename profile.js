@@ -1,7 +1,8 @@
-import { observeAuth, fetchPosts, savePost, deletePost, logout, changePassword, auth, getUserProfile } from "./auth.js";
+import { observeAuth, fetchPosts, savePost, deletePost, logout, changePassword, auth, getUserProfile, isAdmin } from "./auth.js";
 import { uploadImages } from "./imgbb.js";
 import { showToast } from "./ui.js";
 import { registerServiceWorker } from "./pwa.js";
+import { initAdmin } from "./admin.js";
 
 const themeToggle = document.getElementById("themeToggle");
 const logoutBtn = document.getElementById("logoutBtn");
@@ -449,11 +450,13 @@ menuToggle?.addEventListener("click", () => {
 
 observeAuth(async (user) => {
   currentUser = user || null;
+  const adminPanel = document.getElementById("adminPanel");
   if (!currentUser) {
     profileStatus.textContent = "Please log in to view your profile.";
     renderProfileIdentity({ username: "--", email: "--" });
     profileEmpty?.classList.remove("hidden");
     profilePosts.innerHTML = "";
+    adminPanel?.classList.add("hidden");
     return;
   }
   
@@ -471,6 +474,13 @@ observeAuth(async (user) => {
     const fallbackName = currentUser.email ? currentUser.email.split("@")[0] : "Contributor";
     cachedAuthorName = fallbackName;
     renderProfileIdentity({ username: fallbackName, email: currentUser.email || "--" });
+  }
+
+  if (isAdmin(currentUser)) {
+    adminPanel?.classList.remove("hidden");
+    await initAdmin(currentUser);
+  } else {
+    adminPanel?.classList.add("hidden");
   }
   
   await loadProfilePosts();
