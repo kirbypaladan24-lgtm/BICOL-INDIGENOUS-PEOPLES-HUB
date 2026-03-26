@@ -8,6 +8,20 @@ const REQUIRED_FIREBASE_KEYS = [
   "appId",
 ];
 
+// Firebase web config is public client configuration, not a server secret.
+// Keeping a committed fallback prevents the whole app from failing when a host
+// serves the files without injecting env vars first.
+const PUBLIC_FIREBASE_FALLBACK = {
+  apiKey: "AIzaSyBLkTO_wiaEe-Oe-u6sUUy2C7S-0g56jJc",
+  authDomain: "atm-banking-system.firebaseapp.com",
+  databaseURL: "https://atm-banking-system-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "atm-banking-system",
+  storageBucket: "atm-banking-system.firebasestorage.app",
+  messagingSenderId: "386957892456",
+  appId: "1:386957892456:web:6be8ef914b5708344f54dd",
+  measurementId: "G-XDYGMNWSMC",
+};
+
 function readViteFirebaseConfig() {
   if (typeof import.meta === "undefined" || !import.meta.env) {
     return null;
@@ -75,6 +89,7 @@ function getFirebaseConfig() {
     readViteFirebaseConfig(),
     readInjectedFirebaseConfig(),
     readLocalDevConfig(),
+    PUBLIC_FIREBASE_FALLBACK,
   ];
 
   for (const candidate of candidates) {
