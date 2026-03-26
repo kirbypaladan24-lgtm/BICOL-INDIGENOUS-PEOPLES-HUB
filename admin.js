@@ -37,6 +37,8 @@ let currentId = null;
 let currentUser = null;
 let cachedAuthorName = null;
 let currentMedia = [];
+let currentPostAuthorId = null;
+let currentPostAuthorName = null;
 let currentLandmarkId = null;
 let currentLandmarkCover = null;
 let landmarkMap = null;
@@ -264,8 +266,21 @@ async function handleSave() {
     // Merge preserved currentMedia with uploadedUrls; enforce cap
     const media = [...currentMedia, ...uploadedUrls].slice(0, 10);
 
-    const authorName = await resolveAuthorName();
-    await savePost({ id: currentId, title, content, media, author: authorName, authorId: currentUser?.uid || null });
+    const authorName = currentId
+      ? (currentPostAuthorName || await resolveAuthorName())
+      : await resolveAuthorName();
+    const authorId = currentId
+      ? currentPostAuthorId
+      : (currentUser?.uid || null);
+
+    await savePost({
+      id: currentId,
+      title,
+      content,
+      media,
+      author: authorName,
+      authorId,
+    });
 
     showToast(currentId ? "Post updated successfully." : "Post published successfully.", "success");
     
@@ -285,6 +300,8 @@ async function handleSave() {
 function resetForm() {
   currentId = null;
   currentMedia = [];
+  currentPostAuthorId = null;
+  currentPostAuthorName = null;
   postTitle.value = "";
   editor.innerHTML = "";
   imageInput.value = "";
@@ -530,6 +547,8 @@ async function loadAdminPosts() {
             return;
           }
           currentId = id;
+          currentPostAuthorId = post.authorId ?? null;
+          currentPostAuthorName = post.author || null;
           postTitle.value = post.title || "";
           editor.innerHTML = post.content || "";
           currentMedia = Array.isArray(post.media) ? post.media.slice() : (post.coverUrl ? [post.coverUrl] : []);
