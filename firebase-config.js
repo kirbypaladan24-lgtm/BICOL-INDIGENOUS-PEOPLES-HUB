@@ -155,6 +155,27 @@ export function assertFirebaseConfig() {
     return firebaseConfig;
   }
 
+  if (typeof document !== "undefined") {
+    window.addEventListener("DOMContentLoaded", () => {
+      const target = document.getElementById("postsEmpty") || document.body;
+      const existing = document.getElementById("firebase-config-error");
+      if (existing) return;
+
+      const notice = document.createElement("div");
+      notice.id = "firebase-config-error";
+      notice.style.cssText =
+        "margin:16px;padding:14px 16px;border:1px solid #c0392b;border-radius:12px;background:rgba(192,57,43,0.12);color:#fff;line-height:1.5;";
+      notice.textContent =
+        "Firebase configuration is missing. Add the VITE_FIREBASE_* variables to your local .env and Vercel Environment Variables, then redeploy.";
+
+      if (target === document.body) {
+        document.body.prepend(notice);
+      } else {
+        target.parentElement?.insertBefore(notice, target);
+      }
+    }, { once: true });
+  }
+
   throw new Error(
     "Firebase configuration is missing. Add the VITE_FIREBASE_* variables to your local .env and Vercel Environment Variables."
   );
