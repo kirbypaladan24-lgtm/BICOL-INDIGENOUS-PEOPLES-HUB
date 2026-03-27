@@ -29,6 +29,8 @@ import {
   serverTimestamp,
   query,
   orderBy,
+  where,
+  writeBatch,
   initializeFirestore,
   persistentLocalCache,
   persistentMultipleTabManager,
@@ -194,7 +196,12 @@ export function isAdmin(user) {
 
 const postsRef = collection(db, "posts");
 const landmarksRef = collection(db, "landmarks");
+const postReactionsRef = collection(db, "post_reactions");
 const statsRef = doc(db, "stats", "public");
+
+function getReactionDocRef(uid, postId) {
+  return doc(db, "post_reactions", `${uid}_${postId}`);
+}
 
 async function bumpUserCount() {
   try {
@@ -315,6 +322,86 @@ export async function updatePostReactions(id, { likeDelta = 0, dislikeDelta = 0 
     console.error("Failed to update reactions:", error);
     throw error;
   }
+}
+
+export async function fetchCurrentUserReactions(forceServer = true) {
+  const user = auth.currentUser;
+  if (!user?.uid || user.isAnonymous) return {};
+
+  const reactionsQuery = query(postReactionsRef, where("userId", "==", user.uid));
+  let snapshot;
+
+  try {
+    snapshot = forceServer ? await getDocsFromServer(reactionsQuery) : await getDocs(reactionsQuery);
+  } catch (error) {
+    if (!forceServer) throw error;
+    snapshot = await getDocs(reactionsQuery);
+  }
+
+  return snapshot.docs.reduce((acc, reactionDoc) => {
+    const data = reactionDoc.data();
+    if (data?.postId && (data?.value === "like" || data?.value === "dislike")) {
+      acc[data.postId] = data.value;
+    }
+    return acc;
+  }, {});
+}
+
+export async function setPostReaction(postId, nextReaction) {
+  const user = auth.currentUser;
+  if (!user?.uid || user.isAnonymous) {
+    throw new Error("Login required to react to posts.");
+  }
+
+  const reactionRef = getReactionDocRef(user.uid, postId);
+  let reactionSnap;
+
+  try {
+    reactionSnap = await getDocFromServer(reactionRef);
+  } catch (error) {
+    reactionSnap = await getDoc(reactionRef);
+  }
+
+  const currentReaction = reactionSnap.exists() ? reactionSnap.data()?.value || null : null;
+  if (currentReaction === nextReaction) {
+    return currentReaction;
+  }
+
+  let likeDelta = 0;
+  let dislikeDelta = 0;
+
+  if (currentReaction === "like") likeDelta -= 1;
+  if (currentReaction === "dislike") dislikeDelta -= 1;
+  if (nextReaction === "like") likeDelta += 1;
+  if (nextReaction === "dislike") dislikeDelta += 1;
+
+  const batch = writeBatch(db);
+  const postRef = doc(db, "posts", postId);
+  const postPayload = {};
+
+  if (likeDelta) postPayload.likes = increment(likeDelta);
+  if (dislikeDelta) postPayload.dislikes = increment(dislikeDelta);
+  if (Object.keys(postPayload).length) {
+    batch.update(postRef, postPayload);
+  }
+
+  if (nextReaction === "like" || nextReaction === "dislike") {
+    batch.set(
+      reactionRef,
+      {
+        userId: user.uid,
+        postId,
+        value: nextReaction,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+  } else {
+    batch.delete(reactionRef);
+  }
+
+  await batch.commit();
+  return nextReaction || null;
 }
 
 export async function getUserProfile(uid) {
