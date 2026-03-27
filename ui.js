@@ -647,7 +647,9 @@ function bindShare(article, post) {
 function bindReactions(article, post) {
   const id = post?.id;
   if (!id) return;
-  const key = `post-reaction:${id}`;
+  const currentUser = window.__currentUser;
+  const reactionOwnerKey = currentUser?.uid || currentUser?.email || "guest";
+  const key = `post-reaction:${reactionOwnerKey}:${id}`;
   const stored = localStorage.getItem(key); // "like" | "dislike" | null
   const likeBtn = article.querySelector('.react-btn[data-action="like"]');
   const dislikeBtn = article.querySelector('.react-btn[data-action="dislike"]');
