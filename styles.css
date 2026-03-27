@@ -38,7 +38,7 @@ body {
   background: var(--gradient);
   color: var(--text);
   line-height: 1.6;
-  padding-top: 88px;
+  padding-top: 104px;
 }
 
 a {
@@ -60,7 +60,7 @@ a {
   top: 0;
   left: 0;
   right: 0;
-  height: 88px;
+  height: 104px;
   display: grid;
   grid-template-columns: 1fr auto auto;
   align-items: center;
@@ -84,21 +84,25 @@ a {
 }
 
 .brand-mark {
-  width: 46px;
-  height: 46px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
-  background: transparent;
+  background: rgba(255, 255, 255, 0.92);
   display: grid;
   place-items: center;
   color: #0b0e12;
   box-shadow: var(--shadow);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   overflow: hidden;
 }
 
 .brand-mark img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  padding: 0;
+  transform: scale(1.18);
+  transform-origin: center;
   display: block;
 }
 
@@ -1155,7 +1159,7 @@ button {
 .toast {
   position: fixed;
   /* place the toast below the fixed topbar (topbar height + 18px offset) */
-  top: calc(88px + 18px);
+  top: calc(104px + 18px);
   left: 50%;
   transform: translateX(-50%);
   z-index: 99999;           /* much higher than .topbar (which is 2000) */
@@ -1217,7 +1221,7 @@ button {
 /* Responsive: header height reduces at smaller widths, adjust toast top accordingly */
 @media (max-width: 960px) {
   .toast {
-    top: calc(78px + 18px); /* matches the smaller .topbar height in your responsive rules */
+    top: calc(92px + 18px); /* matches the smaller .topbar height in your responsive rules */
   }
 }
 
@@ -2150,12 +2154,16 @@ button {
 @media (max-width: 960px) {
   .topbar {
     grid-template-columns: auto 1fr auto;
-    height: 78px;
+    height: 92px;
     padding: 14px 18px;
     gap: 8px;
   }
   body {
-    padding-top: 90px;
+    padding-top: 108px;
+  }
+  .brand-mark {
+    width: 56px;
+    height: 56px;
   }
   .nav {
     display: none;
@@ -2201,7 +2209,7 @@ button {
   }
   .mobile-menu {
     position: fixed;
-    top: 78px;
+    top: 92px;
     left: 0;
     right: 0;
     background: rgba(9, 14, 10, 0.96);
@@ -2292,6 +2300,10 @@ button {
   .brand {
     align-items: center;
     gap: 10px;
+  }
+  .brand-mark {
+    width: 54px;
+    height: 54px;
   }
 
   .brand h1 {
