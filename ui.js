@@ -579,7 +579,7 @@ export function renderPosts(posts) {
     `;
     article.appendChild(share);
 
-    bindReactions(article, p);
+    bindSyncedReactions(article, p);
     bindShare(article, p);
     grid.appendChild(article);
   });
@@ -647,10 +647,7 @@ function bindShare(article, post) {
 function bindReactions(article, post) {
   const id = post?.id;
   if (!id) return;
-  const currentUser = window.__currentUser;
-  const reactionOwnerKey = currentUser?.uid || currentUser?.email || "guest";
-  const key = `post-reaction:${reactionOwnerKey}:${id}`;
-  const stored = localStorage.getItem(key); // "like" | "dislike" | null
+  const stored = window.__reactionState?.[id] || null;
   const likeBtn = article.querySelector('.react-btn[data-action="like"]');
   const dislikeBtn = article.querySelector('.react-btn[data-action="dislike"]');
   if (!likeBtn || !dislikeBtn) return;
@@ -666,6 +663,21 @@ function bindReactions(article, post) {
   const setActive = (likeActive, dislikeActive) => {
     likeBtn.classList.toggle("active", likeActive);
     dislikeBtn.classList.toggle("active", dislikeActive);
+  };
+
+  const getDesiredReaction = (currentReaction, action) => {
+    if (action === "like") return currentReaction === "like" ? null : "like";
+    return currentReaction === "dislike" ? null : "dislike";
+  };
+
+  const getDeltaPayload = (currentReaction, nextReaction) => {
+    let likeDelta = 0;
+    let dislikeDelta = 0;
+    if (currentReaction === "like") likeDelta -= 1;
+    if (currentReaction === "dislike") dislikeDelta -= 1;
+    if (nextReaction === "like") likeDelta += 1;
+    if (nextReaction === "dislike") dislikeDelta += 1;
+    return { likeDelta, dislikeDelta };
   };
 
   likeBtn.addEventListener("click", async () => {
@@ -737,6 +749,97 @@ function bindReactions(article, post) {
       console.error('❌ Dislike failed for post:', id, e);
       if (likeDelta) adjust(likeCountEl, -likeDelta);
       if (dislikeDelta) adjust(dislikeCountEl, -dislikeDelta);
+      showToast("Failed to save dislike. Please try again.", "error");
+    }
+  });
+}
+
+function bindSyncedReactions(article, post) {
+  const id = post?.id;
+  if (!id) return;
+
+  const stored = window.__reactionState?.[id] || null;
+  const likeBtn = article.querySelector('.react-btn[data-action="like"]');
+  const dislikeBtn = article.querySelector('.react-btn[data-action="dislike"]');
+  if (!likeBtn || !dislikeBtn) return;
+
+  const likeCountEl = likeBtn.querySelector(".count");
+  const dislikeCountEl = dislikeBtn.querySelector(".count");
+  if (stored === "like") likeBtn.classList.add("active");
+  if (stored === "dislike") dislikeBtn.classList.add("active");
+
+  const getCount = (el) => Math.max(0, Number(el?.textContent || 0));
+  const setCount = (el, val) => {
+    if (el) el.textContent = Math.max(0, val);
+  };
+  const adjust = (el, delta) => setCount(el, getCount(el) + delta);
+
+  const setActive = (likeActive, dislikeActive) => {
+    likeBtn.classList.toggle("active", likeActive);
+    dislikeBtn.classList.toggle("active", dislikeActive);
+  };
+
+  const getDesiredReaction = (currentReaction, action) => {
+    if (action === "like") return currentReaction === "like" ? null : "like";
+    return currentReaction === "dislike" ? null : "dislike";
+  };
+
+  const getDeltaPayload = (currentReaction, nextReaction) => {
+    let likeDelta = 0;
+    let dislikeDelta = 0;
+    if (currentReaction === "like") likeDelta -= 1;
+    if (currentReaction === "dislike") dislikeDelta -= 1;
+    if (nextReaction === "like") likeDelta += 1;
+    if (nextReaction === "dislike") dislikeDelta += 1;
+    return { likeDelta, dislikeDelta };
+  };
+
+  likeBtn.addEventListener("click", async () => {
+    if (!requireLoginOrPrompt()) return;
+    const current = window.__reactionState?.[id] || null;
+    const nextReaction = getDesiredReaction(current, "like");
+    const { likeDelta, dislikeDelta } = getDeltaPayload(current, nextReaction);
+
+    if (likeDelta) adjust(likeCountEl, likeDelta);
+    if (dislikeDelta) adjust(dislikeCountEl, dislikeDelta);
+    setActive(nextReaction === "like", nextReaction === "dislike");
+
+    try {
+      const { setPostReaction } = await import("./auth.js");
+      const savedReaction = await setPostReaction(id, nextReaction);
+      window.__reactionState = window.__reactionState || {};
+      if (savedReaction) window.__reactionState[id] = savedReaction;
+      else delete window.__reactionState[id];
+    } catch (e) {
+      console.error("Like failed for post:", id, e);
+      if (likeDelta) adjust(likeCountEl, -likeDelta);
+      if (dislikeDelta) adjust(dislikeCountEl, -dislikeDelta);
+      setActive(current === "like", current === "dislike");
+      showToast("Failed to save like. Please try again.", "error");
+    }
+  });
+
+  dislikeBtn.addEventListener("click", async () => {
+    if (!requireLoginOrPrompt()) return;
+    const current = window.__reactionState?.[id] || null;
+    const nextReaction = getDesiredReaction(current, "dislike");
+    const { likeDelta, dislikeDelta } = getDeltaPayload(current, nextReaction);
+
+    if (likeDelta) adjust(likeCountEl, likeDelta);
+    if (dislikeDelta) adjust(dislikeCountEl, dislikeDelta);
+    setActive(nextReaction === "like", nextReaction === "dislike");
+
+    try {
+      const { setPostReaction } = await import("./auth.js");
+      const savedReaction = await setPostReaction(id, nextReaction);
+      window.__reactionState = window.__reactionState || {};
+      if (savedReaction) window.__reactionState[id] = savedReaction;
+      else delete window.__reactionState[id];
+    } catch (e) {
+      console.error("Dislike failed for post:", id, e);
+      if (likeDelta) adjust(likeCountEl, -likeDelta);
+      if (dislikeDelta) adjust(dislikeCountEl, -dislikeDelta);
+      setActive(current === "like", current === "dislike");
       showToast("Failed to save dislike. Please try again.", "error");
     }
   });
