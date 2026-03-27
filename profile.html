@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-page-title-key="page_title_profile">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -27,8 +27,8 @@
           />
         </span>
         <div>
-          <h1>Bicol Indigenous Peoples Hub</h1>
-          <p>Profile</p>
+          <h1 data-i18n="page_title">Bicol Indigenous Peoples Hub</h1>
+          <p data-i18n="profile">Profile</p>
         </div>
       </div>
       <nav class="nav">
@@ -74,9 +74,9 @@
       <section class="profile-overview-shell">
         <div class="profile-overview-card">
           <div class="profile-overview-copy">
-            <p class="eyebrow">Workspace</p>
-            <h2>Your dashboard</h2>
-            <p id="profileStatus" class="section-desc">Loading your workspace...</p>
+            <p class="eyebrow" data-i18n="workspace">Workspace</p>
+            <h2 data-i18n="your_dashboard">Your dashboard</h2>
+            <p id="profileStatus" class="section-desc" data-i18n="loading_workspace">Loading your workspace...</p>
           </div>
           <div class="profile-identity">
             <p><strong>Username:</strong> <span id="profileUsername">--</span></p>
@@ -87,44 +87,44 @@
 
         <div class="profile-summary-grid">
           <article class="profile-stat-card">
-            <span class="profile-stat-label">Your Posts</span>
+            <span class="profile-stat-label" data-i18n="your_posts_label">Your Posts</span>
             <strong id="profileOwnedCount">0</strong>
-            <p>Stories connected to your account.</p>
+            <p data-i18n="your_posts_desc">Stories connected to your account.</p>
           </article>
           <article class="profile-stat-card">
-            <span class="profile-stat-label">Community Posts</span>
+            <span class="profile-stat-label" data-i18n="community_posts_label">Community Posts</span>
             <strong id="profileCommunityCount">0</strong>
-            <p>Total published stories across the hub.</p>
+            <p data-i18n="community_posts_desc">Total published stories across the hub.</p>
           </article>
           <article class="profile-stat-card">
-            <span class="profile-stat-label">Mapped Landmarks</span>
+            <span class="profile-stat-label" data-i18n="mapped_landmarks_label">Mapped Landmarks</span>
             <strong id="profileLandmarkCount">0</strong>
-            <p>Active places currently visible on the map.</p>
+            <p data-i18n="mapped_landmarks_desc">Active places currently visible on the map.</p>
           </article>
           <article class="profile-stat-card">
-            <span class="profile-stat-label">Workspace</span>
+            <span class="profile-stat-label" data-i18n="workspace_label">Workspace</span>
             <strong id="profileAdminTools">Profile</strong>
-            <p id="profileWorkspaceNote">Manage your account and personal posts here.</p>
+            <p id="profileWorkspaceNote" data-i18n="workspace_note_profile">Manage your account and personal posts here.</p>
           </article>
         </div>
 
         <div class="profile-quick-actions">
           <a href="#profilePostsSection" class="ghost small">Your Posts</a>
-          <a href="#adminPanel" id="adminQuickLink" class="ghost small hidden">Admin Tools</a>
-          <a href="#landmarkWorkspace" id="landmarkQuickLink" class="ghost small hidden">Landmarks</a>
+          <a href="#adminPanel" id="adminQuickLink" class="ghost small hidden" data-i18n="admin_tools">Admin Tools</a>
+          <a href="#landmarkWorkspace" id="landmarkQuickLink" class="ghost small hidden" data-i18n="landmarks_label">Landmarks</a>
         </div>
       </section>
 
       <section id="adminPanel" class="admin hidden profile-admin-panel">
         <div class="admin-bar">
           <div class="admin-heading">
-            <p class="admin-kicker">Dashboard</p>
-            <h3>Admin Panel</h3>
-            <p class="admin-subtitle">Quick access to story and landmark management without leaving your profile workspace.</p>
+            <p class="admin-kicker" data-i18n="dashboard">Dashboard</p>
+            <h3 data-i18n="admin_panel">Admin Panel</h3>
+            <p class="admin-subtitle" data-i18n="admin_subtitle">Quick access to story and landmark management without leaving your profile workspace.</p>
           </div>
           <div class="status">
             <span class="dot"></span>
-            <p id="adminStatus">Restricted</p>
+            <p id="adminStatus" data-i18n="restricted">Restricted</p>
           </div>
         </div>
         <div id="profileEditTools" class="admin-grid admin-grid-posts">
@@ -249,13 +249,13 @@
       <section id="profilePostsSection" class="profile-posts-section">
       <div class="section-head">
         <div>
-          <p class="eyebrow">Personal Library</p>
-          <h3>Your posts</h3>
-          <p class="section-desc">Review and manage the stories tied to your account.</p>
+          <p class="eyebrow" data-i18n="personal_library">Personal Library</p>
+          <h3 data-i18n="your_posts_title">Your posts</h3>
+          <p class="section-desc" data-i18n="your_posts_section_desc">Review and manage the stories tied to your account.</p>
         </div>
       </div>
       <div id="profilePosts" class="posts-feed"></div>
-      <div id="profileEmpty" class="empty hidden">No posts yet.</div>
+      <div id="profileEmpty" class="empty hidden" data-i18n="no_posts_yet_short">No posts yet.</div>
       </section>
     </main>
 
