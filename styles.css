@@ -39,6 +39,9 @@ body {
   color: var(--text);
   line-height: 1.6;
   padding-top: 104px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 html {
@@ -73,6 +76,16 @@ main,
 a {
   color: var(--accent-2);
   text-decoration: none;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[contenteditable="true"]:focus-visible {
+  outline: 3px solid rgba(195, 107, 42, 0.45);
+  outline-offset: 3px;
 }
 
 [data-theme="light"] a {
@@ -917,6 +930,25 @@ button {
   padding: 0;
 }
 
+.posts-feed.loading,
+.profile-posts-section.loading .posts-feed {
+  min-height: 220px;
+  position: relative;
+}
+
+.posts-feed.loading::before,
+.profile-posts-section.loading .posts-feed::before {
+  content: "Loading stories...";
+  display: grid;
+  place-items: center;
+  min-height: 220px;
+  border: 1px dashed rgba(90, 154, 106, 0.24);
+  border-radius: 22px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  background: rgba(255, 255, 255, 0.02);
+}
+
 .post-row {
   padding: 20px;
   display: grid;
@@ -1416,6 +1448,22 @@ button {
     linear-gradient(160deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02)),
     rgba(15, 25, 17, 0.92);
   box-shadow: var(--shadow);
+}
+
+.landmark-summary-card.loading,
+.landmark-cover.loading {
+  min-height: 220px;
+  position: relative;
+}
+
+.landmark-summary-card.loading::before,
+.landmark-cover.loading::before {
+  content: "Loading landmark details...";
+  display: grid;
+  place-items: center;
+  min-height: 220px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
 }
 
 .landmark-cover {
