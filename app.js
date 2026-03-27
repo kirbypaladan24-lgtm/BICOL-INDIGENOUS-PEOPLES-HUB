@@ -14,6 +14,7 @@ import {
   setPublicUserCount,
   fetchLandmarks,
   ensureAnonAuth,
+  fetchCurrentUserReactions,
 } from "./auth.js";
 import { renderPosts, showToast, setStats } from "./ui.js";
 import { uploadImages } from "./imgbb.js";
@@ -96,6 +97,7 @@ const LANDMARK_CACHE_TTL_MS = 1000 * 60 * 30;
 const USER_COUNT_CACHE_KEY = "bicol-ip-user-count";
 let allPostsCache = [];
 let latestMapInfo = { accuracy: null, precise: false, source: null };
+let reactionStateLoadToken = 0;
 
 // Buffers and state
 let positionsBuffer = [];
@@ -260,6 +262,30 @@ function applyPostFilter() {
     empty.textContent = query ? t("posts_empty_search") : t("posts_empty");
   }
   renderPosts(filtered);
+}
+
+async function loadReactionState(user) {
+  const token = ++reactionStateLoadToken;
+
+  if (!user) {
+    window.__reactionState = {};
+    if (allPostsCache.length) applyPostFilter();
+    return;
+  }
+
+  try {
+    const reactions = await fetchCurrentUserReactions(true);
+    if (token !== reactionStateLoadToken) return;
+    window.__reactionState = reactions;
+  } catch (error) {
+    console.warn("Failed to sync reaction state:", error);
+    if (token !== reactionStateLoadToken) return;
+    window.__reactionState = {};
+  }
+
+  if (allPostsCache.length) {
+    applyPostFilter();
+  }
 }
 
 async function resolveAuthorName() {
@@ -1228,9 +1254,7 @@ observeAuth(async (user) => {
   cachedAuthorName = null;
 
   window.__currentUser = user || null;
-  if (allPostsCache.length) {
-    applyPostFilter();
-  }
+  await loadReactionState(user || null);
 
   loadUserCount();
 });
