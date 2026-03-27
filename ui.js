@@ -799,6 +799,9 @@ function bindSyncedReactions(article, post) {
     const current = window.__reactionState?.[id] || null;
     const nextReaction = getDesiredReaction(current, "like");
     const { likeDelta, dislikeDelta } = getDeltaPayload(current, nextReaction);
+    window.__reactionState = window.__reactionState || {};
+    if (nextReaction) window.__reactionState[id] = nextReaction;
+    else delete window.__reactionState[id];
 
     if (likeDelta) adjust(likeCountEl, likeDelta);
     if (dislikeDelta) adjust(dislikeCountEl, dislikeDelta);
@@ -812,6 +815,8 @@ function bindSyncedReactions(article, post) {
       else delete window.__reactionState[id];
     } catch (e) {
       console.error("Like failed for post:", id, e);
+      if (current) window.__reactionState[id] = current;
+      else delete window.__reactionState[id];
       if (likeDelta) adjust(likeCountEl, -likeDelta);
       if (dislikeDelta) adjust(dislikeCountEl, -dislikeDelta);
       setActive(current === "like", current === "dislike");
@@ -824,6 +829,9 @@ function bindSyncedReactions(article, post) {
     const current = window.__reactionState?.[id] || null;
     const nextReaction = getDesiredReaction(current, "dislike");
     const { likeDelta, dislikeDelta } = getDeltaPayload(current, nextReaction);
+    window.__reactionState = window.__reactionState || {};
+    if (nextReaction) window.__reactionState[id] = nextReaction;
+    else delete window.__reactionState[id];
 
     if (likeDelta) adjust(likeCountEl, likeDelta);
     if (dislikeDelta) adjust(dislikeCountEl, dislikeDelta);
@@ -837,6 +845,8 @@ function bindSyncedReactions(article, post) {
       else delete window.__reactionState[id];
     } catch (e) {
       console.error("Dislike failed for post:", id, e);
+      if (current) window.__reactionState[id] = current;
+      else delete window.__reactionState[id];
       if (likeDelta) adjust(likeCountEl, -likeDelta);
       if (dislikeDelta) adjust(dislikeCountEl, -dislikeDelta);
       setActive(current === "like", current === "dislike");
