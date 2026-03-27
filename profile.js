@@ -255,6 +255,9 @@ function showExistingMedia(media) {
 
 async function loadProfilePosts() {
   if (!currentUser) return;
+  profilePosts?.classList.add("loading");
+  profilePosts?.setAttribute("aria-busy", "true");
+  if (profileStatus) profileStatus.textContent = "Loading your stories...";
   const authorName = await resolveAuthorName();
   try {
     const posts = await fetchPosts(true);
@@ -267,6 +270,9 @@ async function loadProfilePosts() {
     console.error("Failed to load profile posts:", e);
     profileStatus.textContent = "Error loading posts. Please refresh.";
     showToast("Failed to load posts: " + (e.message || e), "error");
+  } finally {
+    profilePosts?.classList.remove("loading");
+    profilePosts?.setAttribute("aria-busy", "false");
   }
 }
 
