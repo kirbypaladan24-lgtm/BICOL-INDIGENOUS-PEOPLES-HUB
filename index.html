@@ -4,6 +4,8 @@
   <meta name="google-site-verification" content="960zUcTkH4mRs2wDF4RvAXBExGGlEn4Dy3O2ZB1SiL0" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0b120d" />
+  <meta name="color-scheme" content="dark light" />
   <title>Bicol Indigenous Peoples Hub</title>
   <meta name="description" content="A digital platform for Indigenous Peoples research, culture, and mapping in Bicol.">
   <link rel="icon" type="image/png" href="./favicon.png" />
@@ -15,6 +17,7 @@
   <!-- CSP will be injected by security.js -->
 </head>
 <body>
+  <a class="skip-link" href="#home">Skip to content</a>
   <header class="topbar">
     <div class="brand">
       <span class="brand-mark" aria-hidden="true">
@@ -81,7 +84,7 @@
     </div>
   </div>
 
-  <main id="home" class="hero">
+  <main id="home" class="hero hero-shell">
     <div class="hero-content">
       <p class="eyebrow" data-i18n="hero_eyebrow">Indigenous Peoples | Bicol Region</p>
       <h2 data-i18n="hero_title">Celebrate, learn, and protect the diverse cultures across Bicol.</h2>
@@ -95,6 +98,20 @@
       <div class="hero-actions">
         <button class="solid" id="exploreBtn" data-i18n="btn_explore_posts">Explore Posts</button>
         <button class="ghost" id="scrollMapBtn" data-i18n="btn_view_map">View Map</button>
+      </div>
+      <div class="hero-storyline" aria-label="Platform highlights">
+        <div class="hero-story-pill">
+          <span class="hero-story-label">Stories</span>
+          <strong>Community voices and lived experience</strong>
+        </div>
+        <div class="hero-story-pill">
+          <span class="hero-story-label">Mapping</span>
+          <strong>Places, landscapes, and cultural memory</strong>
+        </div>
+        <div class="hero-story-pill">
+          <span class="hero-story-label">Stewardship</span>
+          <strong>Respectful sharing with care and consent</strong>
+        </div>
       </div>
       <div class="emblems" aria-hidden="true">
         <svg class="emblem" viewBox="0 0 64 64">
@@ -110,6 +127,10 @@
       </div>
     </div>
     <div class="hero-card">
+      <div class="hero-card-head">
+        <p class="eyebrow">Live Overview</p>
+        <h3>A living archive for communities, schools, and cultural partners.</h3>
+      </div>
       <div class="stat">
         <span id="postCount">--</span>
         <p data-i18n="stat_posts">Community posts</p>
@@ -136,6 +157,11 @@
         <p class="eyebrow" data-i18n="map_eyebrow">Interactive Map</p>
         <h3 data-i18n="map_title">Land, waters, and stories across Bicol.</h3>
         <p class="section-desc" data-i18n="map_desc">Explore landmarks and territories associated with Indigenous communities. Click a marker to learn more.</p>
+        <div class="map-legend" aria-label="Map guide">
+          <span class="legend-chip">Live location support</span>
+          <span class="legend-chip">Landmark detail views</span>
+          <span class="legend-chip">Community-aware mapping</span>
+        </div>
       </div>
       <div class="map-controls">
         <button id="trackLocationBtn" class="ghost small">
@@ -177,6 +203,20 @@
       <p data-i18n="about_p2">
         This hub gathers verified references, community contributions, and multimedia resources to amplify voices, protect rights, and encourage respectful engagement.
       </p>
+      <div class="trust-band" aria-label="Platform values">
+        <div class="trust-band-item">
+          <span class="trust-band-kicker">Consent</span>
+          <strong>Community-first sharing</strong>
+        </div>
+        <div class="trust-band-item">
+          <span class="trust-band-kicker">Accuracy</span>
+          <strong>Curated stories and references</strong>
+        </div>
+        <div class="trust-band-item">
+          <span class="trust-band-kicker">Continuity</span>
+          <strong>Knowledge that remains accessible</strong>
+        </div>
+      </div>
     </div>
     <div class="about-card">
       <h4 data-i18n="core_principles">Core Principles</h4>
@@ -195,6 +235,7 @@
       <h3 data-i18n="contact_title">Partner with communities</h3>
       <p>Email: <a href="mailto:bicolindigenouspeopleshub@gmail.com">bicolindigenouspeopleshub@gmail.com</a></p>
       <p data-i18n="contact_text">For collaboration, capacity building, and data stewardship inquiries.</p>
+      <p class="contact-note">Built for preservation, learning, and respectful public access.</p>
     </div>
     <div class="cta-card">
       <h4 data-i18n="cta_title">Want to contribute content?</h4>
@@ -224,13 +265,12 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <span>© 2026 Bicol Indigenous Peoples Hub. All rights reserved.</span>
-       <span>Developed by Kirby Paladan</span>
+      <span>© 2026 Bicol Indigenous Peoples Hub</span>
       <span data-i18n="footer_built">Built with community care</span>
     </div>
   </footer>
 
-  <div id="toast" class="toast hidden"></div>
+  <div id="toast" class="toast hidden" aria-live="polite"></div>
 
   <dialog id="mediaLightbox" class="lightbox">
     <button id="lightboxPrev" class="icon-btn lightbox-nav" aria-label="Previous image" data-i18n-aria-label="previous_image">‹</button>
