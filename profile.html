@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
 <body class="has-desktop-shortcuts">
+    <a class="skip-link" href="#workspaceMain" data-i18n="skip_to_content">Skip to content</a>
     <header class="topbar">
       <div class="brand">
         <span class="brand-mark" aria-hidden="true">
@@ -55,7 +56,7 @@
         <a href="index.html#contact" data-i18n="nav_contact">Contact</a>
       </nav>
       <div class="sidebar-actions">
-        <a id="profileBtn" class="ghost" href="profile.html" data-i18n="profile">Profile</a>
+        <a id="profileBtn" class="ghost" href="profile.html" aria-current="page" data-i18n="profile">Profile</a>
         <a id="adminToolsSidebarLink" class="ghost hidden" href="admin.html" data-i18n="admin_tools">Admin Tools</a>
         <a id="chartsSidebarLink" class="ghost hidden" href="charts.html" data-i18n="data_charts">Data Charts</a>
         <button id="changePassBtn" class="ghost" type="button" data-i18n="change_password">Change Password</button>
@@ -81,11 +82,12 @@
         <a id="mobileAdminToolsLink" class="ghost full hidden" href="admin.html" data-i18n="admin_tools">Admin Tools</a>
         <a id="mobileChartsLink" class="ghost full hidden" href="charts.html" data-i18n="data_charts">Data Charts</a>
         <button id="mobileChangePassBtn" class="ghost full" type="button" data-i18n="change_password">Change Password</button>
+        <a class="ghost full" href="policy.html" data-i18n="footer_policy">Privacy &amp; Content Policy</a>
         <button id="mobileLogoutBtn" class="solid full" data-i18n="logout">Logout</button>
       </div>
     </div>
 
-    <main class="section profile-dashboard">
+    <main id="workspaceMain" class="section profile-dashboard">
       <section class="profile-overview-shell">
         <div class="profile-overview-card">
           <div class="profile-overview-copy">
