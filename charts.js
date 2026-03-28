@@ -1,5 +1,8 @@
 import {
   observeAuth,
+  observePosts,
+  observeUsers,
+  observeLandmarks,
   logout,
   changePassword,
   getUserProfile,
@@ -7,7 +10,6 @@ import {
   fetchPosts,
   fetchLandmarks,
   fetchUsers,
-  fetchUsersCount,
 } from "./auth.js";
 import { initI18n, t } from "./i18n.js";
 import { showToast } from "./ui.js";
@@ -56,6 +58,7 @@ const RANGE_CONFIG = {
 let latestChartPayload = null;
 let currentIdentity = null;
 let currentRange = "7";
+let liveChartUnsubs = [];
 
 function escapeHtml(value = "") {
   return String(value)
@@ -358,6 +361,50 @@ function renderIdentity(identity) {
   if (chartRole) chartRole.textContent = t("administrator_role");
 }
 
+function stopLiveChartObservers() {
+  liveChartUnsubs.forEach((unsubscribe) => {
+    try {
+      unsubscribe?.();
+    } catch (error) {
+      console.warn("Failed to unsubscribe chart listener:", error);
+    }
+  });
+  liveChartUnsubs = [];
+}
+
+function updateChartPayload(partial = {}) {
+  const nextPayload = {
+    posts: latestChartPayload?.posts || [],
+    landmarks: latestChartPayload?.landmarks || [],
+    users: latestChartPayload?.users || [],
+    userCount: latestChartPayload?.userCount || 0,
+    ...partial,
+  };
+
+  if (Array.isArray(nextPayload.users)) {
+    nextPayload.userCount = nextPayload.users.length;
+  }
+
+  renderCharts(nextPayload);
+  if (chartsStatus) chartsStatus.textContent = t("data_charts_subtitle");
+}
+
+function startLiveChartObservers() {
+  stopLiveChartObservers();
+
+  liveChartUnsubs = [
+    observePosts((posts) => {
+      updateChartPayload({ posts });
+    }),
+    observeLandmarks((landmarks) => {
+      updateChartPayload({ landmarks });
+    }),
+    observeUsers((users) => {
+      updateChartPayload({ users, userCount: users.length });
+    }),
+  ];
+}
+
 function renderCharts(payload) {
   latestChartPayload = payload;
 
@@ -435,21 +482,21 @@ function setRange(range) {
 async function loadCharts() {
   if (chartsStatus) chartsStatus.textContent = t("loading_workspace");
 
-  const [posts, landmarks, users, userCountResult] = await Promise.all([
+  const [posts, landmarks, users] = await Promise.all([
     fetchPosts(true),
     fetchLandmarks(true),
     fetchUsers(true),
-    fetchUsersCount(),
   ]);
 
   renderCharts({
     posts,
     landmarks,
     users,
-    userCount: userCountResult?.count ?? users.length,
+    userCount: users.length,
   });
 
   if (chartsStatus) chartsStatus.textContent = t("data_charts_subtitle");
+  startLiveChartObservers();
 }
 
 async function triggerPasswordReset() {
@@ -548,6 +595,7 @@ window.addEventListener("language-changed", () => {
 
 observeAuth(async (user) => {
   if (!user || !isAdmin(user)) {
+    stopLiveChartObservers();
     window.location.href = "profile.html";
     return;
   }
@@ -569,6 +617,8 @@ observeAuth(async (user) => {
     showToast(t("profile_load_error"), "error");
   }
 });
+
+window.addEventListener("beforeunload", stopLiveChartObservers);
 
 initI18n();
 initTheme();
