@@ -1581,20 +1581,133 @@ button {
   gap: 22px;
 }
 
-.about-card,
-.cta-card {
-  background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)),
-    var(--card);
-  border: 1px solid var(--border);
-  border-radius: 22px;
-  padding: 22px;
-  box-shadow: var(--shadow);
+.about-shell,
+.contact-shell {
+  position: relative;
+  align-items: stretch;
 }
 
-.about-card ul {
-  padding-left: 18px;
-  color: var(--muted);
+.about-story-card,
+.contact-story-card,
+.about-card,
+.cta-card {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02)),
+    radial-gradient(circle at top left, rgba(195, 107, 42, 0.12), rgba(0, 0, 0, 0)),
+    var(--card);
+  border: 1px solid var(--border);
+  border-radius: 26px;
+  padding: 26px;
+  box-shadow: var(--shadow);
+  isolation: isolate;
+}
+
+.about-story-card::before,
+.contact-story-card::before,
+.about-principles-card::before,
+.contact-cta-card::before {
+  content: "";
+  position: absolute;
+  inset: -40% auto auto -14%;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(90, 154, 106, 0.18), rgba(90, 154, 106, 0));
+  pointer-events: none;
+  z-index: -1;
+}
+
+.about-story-card::after,
+.contact-story-card::after,
+.about-principles-card::after,
+.contact-cta-card::after {
+  content: "";
+  position: absolute;
+  inset: auto -72px -88px auto;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(195, 107, 42, 0.16), rgba(195, 107, 42, 0));
+  pointer-events: none;
+  z-index: -1;
+}
+
+.about-story-card,
+.contact-story-card {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+
+.about-story-card h3,
+.contact-story-card h3,
+.about-principles-card h4,
+.contact-cta-card h4 {
+  margin: 2px 0 0;
+}
+
+.about-story-card > p,
+.contact-story-card > p,
+.contact-cta-card > p {
+  max-width: 56ch;
+  line-height: 1.75;
+}
+
+.about-principles-card,
+.contact-cta-card {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+}
+
+.about-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.about-card-mark {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0)),
+    linear-gradient(135deg, rgba(195, 107, 42, 0.85), rgba(90, 154, 106, 0.85));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 16px 30px rgba(0, 0, 0, 0.14);
+}
+
+.about-principles-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.about-principles-card li {
+  position: relative;
+  padding: 14px 16px 14px 46px;
+  border-radius: 18px;
+  border: 1px solid rgba(195, 107, 42, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.about-principles-card li::before {
+  content: "";
+  position: absolute;
+  left: 16px;
+  top: 18px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(195, 107, 42, 0.95), rgba(90, 154, 106, 0.95));
+  box-shadow: 0 0 0 5px rgba(195, 107, 42, 0.1);
 }
 
 .contact {
@@ -1607,6 +1720,33 @@ button {
   margin-top: 14px;
   color: var(--muted);
   max-width: 40ch;
+}
+
+.contact-email-line {
+  margin: 4px 0 0;
+}
+
+.contact-mail {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 4px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(90, 154, 106, 0.24);
+  background: rgba(90, 154, 106, 0.08);
+  color: var(--accent-2);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.contact-mail:hover {
+  border-color: rgba(195, 107, 42, 0.3);
+  color: var(--text);
+}
+
+.contact-cta-card .solid {
+  justify-self: start;
 }
 
 .trust-band {
@@ -1683,10 +1823,13 @@ button {
 [data-theme="light"] .profile-overview-card,
 [data-theme="light"] .profile-stat-card,
 [data-theme="light"] .post-row,
+[data-theme="light"] .about-story-card,
 [data-theme="light"] .about-card,
+[data-theme="light"] .contact-story-card,
 [data-theme="light"] .cta-card {
   background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.98), rgba(238, 241, 234, 0.92)),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.98), rgba(239, 243, 235, 0.94)),
+    radial-gradient(circle at top left, rgba(195, 107, 42, 0.08), rgba(255, 255, 255, 0)),
     #ffffff;
 }
 
@@ -1694,6 +1837,17 @@ button {
 [data-theme="light"] .trust-band-item {
   background: rgba(255, 255, 255, 0.9);
   border-color: rgba(63, 107, 63, 0.14);
+}
+
+[data-theme="light"] .about-principles-card li {
+  background: rgba(248, 249, 244, 0.96);
+  border-color: rgba(195, 107, 42, 0.18);
+}
+
+[data-theme="light"] .contact-mail {
+  background: rgba(63, 107, 63, 0.08);
+  border-color: rgba(63, 107, 63, 0.18);
+  color: #24563b;
 }
 
 [data-theme="light"] .legend-chip {
