@@ -371,35 +371,28 @@ function renderLineChart(svgEl, series, { lineColor = "#5a9a6a", fillColor = "rg
 
   const dots = points
     .map(
-      (point, index) => `
+      (point) => `
         <circle
           cx="${point.x.toFixed(2)}"
           cy="${point.y.toFixed(2)}"
           r="3.5"
           fill="${lineColor}"
-          class="chart-dot"
-          style="animation-delay:${index * 90}ms;"
         ></circle>
         <title>${escapeHtml(point.label)}: ${point.value}</title>
       `
     )
     .join("");
-
-  const drawLength = Math.max(240, Math.round(points.length * 72));
-  const lineAnimation = prefersReducedMotion
-    ? ""
-    : `class="chart-line-path" stroke-dasharray="${drawLength}" stroke-dashoffset="${drawLength}" style="--chart-path-length:${drawLength};"`;
-  const areaAnimation = prefersReducedMotion ? "" : `class="chart-area-fill"`;
-  const gridAnimationClass = prefersReducedMotion ? "" : `class="chart-grid"`;
-  const labelAnimationClass = prefersReducedMotion ? "" : `class="chart-axis-labels"`;
+  const seriesGroupClass = prefersReducedMotion ? "" : `class="chart-series-grow"`;
 
   svgEl.innerHTML = `
     <rect x="0" y="0" width="${width}" height="${height}" rx="18" fill="transparent"></rect>
-    <g ${gridAnimationClass}>${gridLines}</g>
-    <path d="${areaPath}" fill="${fillColor}" ${areaAnimation}></path>
-    <path d="${linePath}" fill="none" stroke="${lineColor}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" ${lineAnimation}></path>
-    ${dots}
-    <g ${labelAnimationClass}>${xLabels}</g>
+    ${gridLines}
+    <g ${seriesGroupClass}>
+      <path d="${areaPath}" fill="${fillColor}"></path>
+      <path d="${linePath}" fill="none" stroke="${lineColor}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+      ${dots}
+    </g>
+    ${xLabels}
   `;
 }
 
@@ -448,7 +441,7 @@ function renderTopPosts(container, posts = []) {
       const engagement = likes + dislikes;
       const published = getDateValue(post, ["createdAt", "updatedAt"]);
       return `
-        <article class="admin-top-post${prefersReducedMotion ? "" : " is-animated"}" style="--post-delay:${index * 80}ms;">
+        <article class="admin-top-post">
           <div class="admin-top-post-rank">${index + 1}</div>
           <div class="admin-top-post-main">
             <div class="admin-top-post-head">
