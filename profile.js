@@ -3,7 +3,6 @@ import { uploadImages } from "./imgbb.js";
 import { initI18n, t } from "./i18n.js";
 import { showToast } from "./ui.js";
 import { registerServiceWorker } from "./pwa.js";
-import { initAdmin } from "./admin.js";
 
 const themeToggle = document.getElementById("themeToggle");
 const logoutBtn = document.getElementById("logoutBtn");
@@ -25,9 +24,9 @@ const profileCommunityCount = document.getElementById("profileCommunityCount");
 const profileLandmarkCount = document.getElementById("profileLandmarkCount");
 const profileAdminTools = document.getElementById("profileAdminTools");
 const profileWorkspaceNote = document.getElementById("profileWorkspaceNote");
-const adminQuickLink = document.getElementById("adminQuickLink");
-const landmarkQuickLink = document.getElementById("landmarkQuickLink");
+const adminToolsSidebarLink = document.getElementById("adminToolsSidebarLink");
 const chartsSidebarLink = document.getElementById("chartsSidebarLink");
+const mobileAdminToolsLink = document.getElementById("mobileAdminToolsLink");
 const mobileChartsLink = document.getElementById("mobileChartsLink");
 
 const editDialog = document.getElementById("profileEditDialog");
@@ -87,15 +86,15 @@ function renderWorkspaceSummary({ role = t("guest_role"), ownedCount = 0, commun
   if (profileOwnedCount) profileOwnedCount.textContent = String(ownedCount);
   if (profileCommunityCount) profileCommunityCount.textContent = String(communityCount);
   if (profileLandmarkCount) profileLandmarkCount.textContent = String(landmarkCount);
-  if (profileAdminTools) profileAdminTools.textContent = admin ? t("admin_panel") : t("profile");
+  if (profileAdminTools) profileAdminTools.textContent = admin ? t("admin_tools") : t("profile");
   if (profileWorkspaceNote) {
     profileWorkspaceNote.textContent = admin
       ? t("workspace_note_admin")
       : t("workspace_note_profile");
   }
-  adminQuickLink?.classList.toggle("hidden", !admin);
-  landmarkQuickLink?.classList.toggle("hidden", !admin);
+  adminToolsSidebarLink?.classList.toggle("hidden", !admin);
   chartsSidebarLink?.classList.toggle("hidden", !admin);
+  mobileAdminToolsLink?.classList.toggle("hidden", !admin);
   mobileChartsLink?.classList.toggle("hidden", !admin);
 }
 
@@ -520,14 +519,12 @@ menuToggle?.addEventListener("click", () => {
 
 observeAuth(async (user) => {
   currentUser = user || null;
-  const adminPanel = document.getElementById("adminPanel");
   if (!currentUser) {
     profileStatus.textContent = t("profile_login_required");
     renderProfileIdentity({ username: "--", email: "--" });
     renderWorkspaceSummary({ role: t("guest_role"), ownedCount: 0, communityCount: 0, landmarkCount: 0, admin: false });
     profileEmpty?.classList.remove("hidden");
     profilePosts.innerHTML = "";
-    adminPanel?.classList.add("hidden");
     return;
   }
   
@@ -552,13 +549,6 @@ observeAuth(async (user) => {
     role: adminUser ? t("administrator_role") : t("member_role"),
     admin: adminUser,
   });
-
-  if (adminUser) {
-    adminPanel?.classList.remove("hidden");
-    await initAdmin(currentUser);
-  } else {
-    adminPanel?.classList.add("hidden");
-  }
   
   await Promise.all([
     loadProfilePosts(),
