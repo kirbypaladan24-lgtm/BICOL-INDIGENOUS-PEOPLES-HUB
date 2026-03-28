@@ -31,7 +31,7 @@
   <link rel="stylesheet" href="./styles.css" />
   <!-- CSP will be injected by security.js -->
 </head>
-<body>
+<body class="has-desktop-shortcuts">
   <a class="skip-link" href="#home" data-i18n="skip_to_content">Skip to content</a>
   <header class="topbar">
     <div class="brand">
@@ -51,33 +51,41 @@
         <p data-i18n="brand_tagline">Stories, heritage, and living culture</p>
       </div>
     </div>
-    <nav class="nav">
+    <div class="auth-cta">
+      <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
+        <span class="toggle-thumb"></span>
+        <span class="toggle-icon sun">☀︎</span>
+        <span class="toggle-icon moon">☾</span>
+      </button>
+      <button id="menuToggle" class="ghost icon-only" aria-label="Toggle menu" aria-expanded="false">☰</button>
+    </div>
+  </header>
+
+  <aside class="desktop-shortcuts" aria-label="Primary sidebar">
+    <nav class="nav" aria-label="Primary">
       <a href="#home" data-i18n="nav_home">Home</a>
       <a href="#map" data-i18n="nav_map">Map</a>
       <a href="#posts" data-i18n="nav_posts">Posts</a>
       <a href="#about" data-i18n="nav_about">About</a>
       <a href="#contact" data-i18n="nav_contact">Contact</a>
     </nav>
-    <div class="auth-cta">
-      <select
-        id="languageSelect"
-        class="language-select"
-        data-language-selector
-        data-i18n-aria-label="choose_language"
-        aria-label="Choose language"
-      ></select>
-      <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
-        <span class="toggle-thumb"></span>
-        <span class="toggle-icon sun">☀︎</span>
-        <span class="toggle-icon moon">☾</span>
-      </button>
+    <div class="sidebar-actions">
       <a id="profileBtn" class="ghost hidden" href="profile.html" data-i18n="profile">Profile</a>
       <button id="changePassBtn" class="ghost hidden" type="button" data-i18n="change_password">Change Password</button>
+      <a class="ghost" href="policy.html" data-i18n="footer_policy">Privacy &amp; Content Policy</a>
+      <div class="sidebar-controls">
+        <select
+          id="languageSelect"
+          class="language-select"
+          data-language-selector
+          data-i18n-aria-label="choose_language"
+          aria-label="Choose language"
+        ></select>
+      </div>
       <button id="loginBtn" class="ghost" data-i18n="login">Login</button>
       <button id="logoutBtn" class="solid hidden" data-i18n="logout">Logout</button>
-      <button id="menuToggle" class="ghost icon-only" aria-label="Toggle menu" aria-expanded="false">☰</button>
     </div>
-  </header>
+  </aside>
 
   <div id="mobileMenu" class="mobile-menu">
     <div class="mobile-links">
@@ -409,5 +417,6 @@
   <script type="module" src="./app.js"></script>
 </body>
 </html>
+
 
 
