@@ -126,6 +126,17 @@ function formatWorkspaceTimestamp(date = new Date()) {
   }).format(date);
 }
 
+function getLatestChartDataTimestamp({ posts = [], landmarks = [], users = [] } = {}) {
+  const timestamps = [
+    ...posts.map((item) => getDateValue(item, ["updatedAt", "createdAt"])),
+    ...landmarks.map((item) => getDateValue(item, ["updatedAt", "createdAt"])),
+    ...users.map((item) => getDateValue(item, ["lastLoginAt", "createdAt"])),
+  ].filter(Boolean);
+
+  if (!timestamps.length) return null;
+  return new Date(Math.max(...timestamps.map((date) => date.getTime())));
+}
+
 function getRangeDays(range = currentRange) {
   return RANGE_CONFIG[range]?.days ?? RANGE_CONFIG["7"].days;
 }
@@ -463,6 +474,7 @@ function renderCharts(payload) {
   const filteredLikes = filteredPosts.reduce((sum, post) => sum + Math.max(0, Number(post.likes || 0)), 0);
   const filteredDislikes = filteredPosts.reduce((sum, post) => sum + Math.max(0, Number(post.dislikes || 0)), 0);
   const totalEngagement = filteredLikes + filteredDislikes;
+  const latestDataTimestamp = getLatestChartDataTimestamp({ posts, landmarks, users });
 
   renderMetric(adminMetricPosts, filteredPosts.length);
   renderMetric(adminMetricUsers, currentRange === "all" ? userCount : filteredUsers.length);
@@ -470,7 +482,9 @@ function renderCharts(payload) {
   renderMetric(adminMetricEngagement, totalEngagement);
   if (chartRangeSummary) chartRangeSummary.textContent = getRangeLabel();
   if (chartTrackedPosts) chartTrackedPosts.textContent = formatCompactNumber(filteredPosts.length);
-  if (chartLastUpdated) chartLastUpdated.textContent = formatWorkspaceTimestamp(new Date());
+  if (chartLastUpdated) {
+    chartLastUpdated.textContent = latestDataTimestamp ? formatWorkspaceTimestamp(latestDataTimestamp) : "--";
+  }
 
   chartRangeLabels.forEach((label) => {
     label.textContent = getRangeLabel();
