@@ -30,7 +30,7 @@ import {
   query,
   orderBy,
   where,
-  writeBatch,
+  runTransaction,
   initializeFirestore,
   persistentLocalCache,
   persistentMultipleTabManager,
@@ -381,62 +381,67 @@ export async function setPostReaction(postId, nextReaction) {
   }
 
   const reactionRef = getReactionDocRef(user.uid, postId);
-  let reactionSnap;
-
-  try {
-    reactionSnap = await getDocFromServer(reactionRef);
-  } catch (error) {
-    reactionSnap = await getDoc(reactionRef);
-  }
-
-  const currentReaction = reactionSnap.exists() ? reactionSnap.data()?.value || null : null;
-  if (currentReaction === nextReaction) {
-    return {
-      reaction: currentReaction,
-      likeDelta: 0,
-      dislikeDelta: 0,
-    };
-  }
-
-  let likeDelta = 0;
-  let dislikeDelta = 0;
-
-  if (currentReaction === "like") likeDelta -= 1;
-  if (currentReaction === "dislike") dislikeDelta -= 1;
-  if (nextReaction === "like") likeDelta += 1;
-  if (nextReaction === "dislike") dislikeDelta += 1;
-
-  const batch = writeBatch(db);
   const postRef = doc(db, "posts", postId);
-  const postPayload = {};
+  return runTransaction(db, async (transaction) => {
+    const [postSnap, reactionSnap] = await Promise.all([
+      transaction.get(postRef),
+      transaction.get(reactionRef),
+    ]);
 
-  if (likeDelta) postPayload.likes = increment(likeDelta);
-  if (dislikeDelta) postPayload.dislikes = increment(dislikeDelta);
-  if (Object.keys(postPayload).length) {
-    batch.update(postRef, postPayload);
-  }
+    if (!postSnap.exists()) {
+      throw new Error("Post not found.");
+    }
 
-  if (nextReaction === "like" || nextReaction === "dislike") {
-    batch.set(
-      reactionRef,
-      {
-        userId: user.uid,
-        postId,
-        value: nextReaction,
-        updatedAt: serverTimestamp(),
-      },
-      { merge: true }
-    );
-  } else {
-    batch.delete(reactionRef);
-  }
+    const postData = postSnap.data() || {};
+    const currentReaction = reactionSnap.exists() ? reactionSnap.data()?.value || null : null;
 
-  await batch.commit();
-  return {
-    reaction: nextReaction || null,
-    likeDelta,
-    dislikeDelta,
-  };
+    if (currentReaction === nextReaction) {
+      return {
+        reaction: currentReaction,
+        likeDelta: 0,
+        dislikeDelta: 0,
+      };
+    }
+
+    let likeDelta = 0;
+    let dislikeDelta = 0;
+
+    if (currentReaction === "like") likeDelta -= 1;
+    if (currentReaction === "dislike") dislikeDelta -= 1;
+    if (nextReaction === "like") likeDelta += 1;
+    if (nextReaction === "dislike") dislikeDelta += 1;
+
+    const currentLikes = Math.max(0, Number(postData.likes || 0));
+    const currentDislikes = Math.max(0, Number(postData.dislikes || 0));
+    const nextLikes = Math.max(0, currentLikes + likeDelta);
+    const nextDislikes = Math.max(0, currentDislikes + dislikeDelta);
+
+    transaction.update(postRef, {
+      likes: nextLikes,
+      dislikes: nextDislikes,
+    });
+
+    if (nextReaction === "like" || nextReaction === "dislike") {
+      transaction.set(
+        reactionRef,
+        {
+          userId: user.uid,
+          postId,
+          value: nextReaction,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+    } else if (reactionSnap.exists()) {
+      transaction.delete(reactionRef);
+    }
+
+    return {
+      reaction: nextReaction || null,
+      likeDelta,
+      dislikeDelta,
+    };
+  });
 }
 
 export async function getUserProfile(uid) {
