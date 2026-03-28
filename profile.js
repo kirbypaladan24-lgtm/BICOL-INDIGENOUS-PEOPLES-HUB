@@ -27,6 +27,8 @@ const profileAdminTools = document.getElementById("profileAdminTools");
 const profileWorkspaceNote = document.getElementById("profileWorkspaceNote");
 const adminQuickLink = document.getElementById("adminQuickLink");
 const landmarkQuickLink = document.getElementById("landmarkQuickLink");
+const chartsSidebarLink = document.getElementById("chartsSidebarLink");
+const mobileChartsLink = document.getElementById("mobileChartsLink");
 
 const editDialog = document.getElementById("profileEditDialog");
 const closeEdit = document.getElementById("closeProfileEdit");
@@ -93,6 +95,8 @@ function renderWorkspaceSummary({ role = t("guest_role"), ownedCount = 0, commun
   }
   adminQuickLink?.classList.toggle("hidden", !admin);
   landmarkQuickLink?.classList.toggle("hidden", !admin);
+  chartsSidebarLink?.classList.toggle("hidden", !admin);
+  mobileChartsLink?.classList.toggle("hidden", !admin);
 }
 
 function applyTheme(theme) {
