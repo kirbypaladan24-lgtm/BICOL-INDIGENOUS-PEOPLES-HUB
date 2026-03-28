@@ -228,8 +228,8 @@
     <div class="empty" id="postsEmpty" data-i18n="posts_empty">No posts yet. Sign in to add the first story.</div>
   </section>
 
-  <section id="about" class="section two-col">
-    <div data-reveal>
+  <section id="about" class="section two-col about-shell">
+    <div class="about-story-card" data-reveal>
       <p class="eyebrow" data-i18n="about_eyebrow">About</p>
       <h3 data-i18n="about_title">Indigenous Peoples of Bicol</h3>
       <p data-i18n="about_p1">
@@ -254,8 +254,11 @@
         </div>
       </div>
     </div>
-    <div class="about-card" data-reveal data-reveal-delay="120">
-      <h4 data-i18n="core_principles">Core Principles</h4>
+    <div class="about-card about-principles-card" data-reveal data-reveal-delay="120">
+      <div class="about-card-head">
+        <span class="about-card-mark" aria-hidden="true"></span>
+        <h4 data-i18n="core_principles">Core Principles</h4>
+      </div>
       <ul>
         <li data-i18n="principle_1">Community consent and attribution</li>
         <li data-i18n="principle_2">Cultural sensitivity and accuracy</li>
@@ -265,15 +268,15 @@
     </div>
   </section>
 
-  <section id="contact" class="section contact">
-    <div data-reveal>
+  <section id="contact" class="section contact contact-shell">
+    <div class="contact-story-card" data-reveal>
       <p class="eyebrow" data-i18n="contact_eyebrow">Contact</p>
       <h3 data-i18n="contact_title">Partner with communities</h3>
-      <p>Email: <a href="mailto:bicolindigenouspeopleshub@gmail.com">bicolindigenouspeopleshub@gmail.com</a></p>
+      <p class="contact-email-line">Email: <a class="contact-mail" href="mailto:bicolindigenouspeopleshub@gmail.com">bicolindigenouspeopleshub@gmail.com</a></p>
       <p data-i18n="contact_text">For collaboration, capacity building, and data stewardship inquiries.</p>
       <p class="contact-note" data-i18n="contact_note">Built for preservation, learning, and respectful public access.</p>
     </div>
-    <div class="cta-card" data-reveal data-reveal-delay="120">
+    <div class="cta-card contact-cta-card" data-reveal data-reveal-delay="120">
       <h4 data-i18n="cta_title">Want to contribute content?</h4>
       <p data-i18n="cta_text">Sign in and share verified stories, photos, and references. Admins can review and publish.</p>
       <button class="solid" id="ctaLoginBtn" data-i18n="cta_btn">Login to contribute</button>
