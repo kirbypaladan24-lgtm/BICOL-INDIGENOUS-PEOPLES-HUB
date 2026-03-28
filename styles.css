@@ -2140,7 +2140,7 @@ button {
   resize: vertical;
 }
 
-#landmarkSummary {
+textarea#landmarkSummary {
   min-height: 132px;
   max-height: 260px;
   overflow-y: hidden;
