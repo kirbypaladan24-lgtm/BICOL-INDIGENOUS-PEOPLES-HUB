@@ -101,10 +101,13 @@ const POLICY_KEY = "bicol-ip-policy-v1";
 const LANDMARK_CACHE_KEY = "bicol-ip-landmarks-cache-v1";
 const LANDMARK_CACHE_TTL_MS = 1000 * 60 * 30;
 const USER_COUNT_CACHE_KEY = "bicol-ip-user-count";
+const linkedPostId = new URLSearchParams(window.location.search).get("post");
 let allPostsCache = [];
 let latestMapInfo = { accuracy: null, precise: false, source: null };
 let reactionStateLoadToken = 0;
 let reactionStateUnsub = null;
+let linkedPostHandled = false;
+let linkedPostClearTimer = null;
 
 // Buffers and state
 let positionsBuffer = [];
@@ -269,6 +272,34 @@ function applyPostFilter() {
     empty.textContent = query ? t("posts_empty_search") : t("posts_empty");
   }
   renderPosts(filtered);
+  requestAnimationFrame(() => {
+    focusLinkedPost();
+  });
+}
+
+function focusLinkedPost() {
+  if (!linkedPostId || linkedPostHandled) return;
+
+  const target = document.getElementById(`post-${linkedPostId}`);
+  if (!target) return;
+
+  linkedPostHandled = true;
+  const postsSection = document.getElementById("posts");
+
+  postsSection?.scrollIntoView({ behavior: "smooth", block: "start" });
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+      target.classList.add("is-linked-post");
+      target.setAttribute("tabindex", "-1");
+      target.focus({ preventScroll: true });
+
+      if (linkedPostClearTimer) clearTimeout(linkedPostClearTimer);
+      linkedPostClearTimer = setTimeout(() => {
+        target.classList.remove("is-linked-post");
+      }, 3200);
+    }, 180);
+  });
 }
 
 async function loadReactionState(user) {
