@@ -16,6 +16,33 @@ let imgB = null;
 let activeIsA = true;
 let captionEl = null;
 
+function enhanceImageLoading(imgEl, { eager = false } = {}) {
+  if (!imgEl) return;
+  imgEl.decoding = "async";
+  imgEl.loading = eager ? "eager" : "lazy";
+  imgEl.classList.add("progressive-image");
+
+  const markReady = () => {
+    imgEl.classList.remove("is-loading");
+    imgEl.classList.add("is-ready");
+  };
+
+  if (imgEl.complete && imgEl.naturalWidth > 0) {
+    markReady();
+    return;
+  }
+
+  imgEl.classList.add("is-loading");
+  imgEl.addEventListener("load", markReady, { once: true });
+  imgEl.addEventListener(
+    "error",
+    () => {
+      imgEl.classList.remove("is-loading");
+    },
+    { once: true }
+  );
+}
+
 /* ---------- Lightbox slider (single instance) ---------- */
 function ensureLightboxSlider() {
   if (sliderContainer) return;
@@ -36,6 +63,7 @@ function ensureLightboxSlider() {
     imgEl.style.maxHeight = "92vh";
     imgEl.style.objectFit = "contain";
     imgEl.style.display = "block";
+    enhanceImageLoading(imgEl, { eager: true });
   });
 
   captionEl = document.createElement("div");
@@ -301,10 +329,12 @@ function buildInstaCarousel(media = [], title = "") {
     if (isClone) slide.dataset.clone = "true";
     const img = document.createElement("img");
     img.loading = "lazy";
+    img.decoding = "async";
     img.src = src;
     img.alt = title || `Image ${realIndex + 1}`;
     img.draggable = false;
     img.dataset.realIndex = String(realIndex);
+    enhanceImageLoading(img);
     slide.appendChild(img);
     track.appendChild(slide);
     slides.push(slide);
@@ -525,8 +555,10 @@ export function renderPosts(posts) {
     images.forEach((imgEl) => {
       if (imgEl.closest(".insta-carousel")) return;
       if (!imgEl.loading) imgEl.loading = "lazy";
+      imgEl.decoding = "async";
       imgEl.style.cursor = "pointer";
       imgEl.draggable = false;
+      enhanceImageLoading(imgEl);
       if (imgEl.__lightboxBound) return;
       imgEl.__lightboxBound = true;
       imgEl.addEventListener("click", (ev) => {
@@ -936,6 +968,7 @@ function addYouTubePreviews(root) {
       </a>
     `;
     a.parentNode.insertBefore(wrapper, a.nextSibling);
+    enhanceImageLoading(wrapper.querySelector("img"));
   });
 }
 
