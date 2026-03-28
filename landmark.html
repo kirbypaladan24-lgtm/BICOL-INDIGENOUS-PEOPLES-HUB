@@ -13,7 +13,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Manrope:wght@400;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./styles.css" />
 </head>
-<body>
+<body class="has-desktop-shortcuts has-landmark-shortcuts">
   <header class="topbar">
     <div class="brand">
       <span class="brand-mark" aria-hidden="true">
@@ -33,14 +33,21 @@
       </div>
     </div>
     <div class="auth-cta">
-      <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
+      <button id="mobileThemeToggle" class="theme-toggle header-theme-toggle" aria-label="Toggle theme">
         <span class="toggle-thumb"></span>
         <span class="toggle-icon sun">☀︎</span>
         <span class="toggle-icon moon">☾</span>
       </button>
-      <a href="index.html#map" class="ghost small" data-i18n="back_to_map">Back to Map</a>
+      <a href="index.html#map" class="ghost small header-shortcut-link" data-i18n="back_to_map">Back to Map</a>
     </div>
   </header>
+
+  <aside class="desktop-shortcuts" aria-label="Primary sidebar">
+    <div class="sidebar-actions">
+      <a href="index.html#map" class="ghost small" data-i18n="back_to_map">Back to Map</a>
+      <a href="policy.html" class="ghost small" data-i18n="footer_policy">Privacy &amp; Content Policy</a>
+    </div>
+  </aside>
 
   <main class="section landmark-page">
     <div class="landmark-hero-shell">
@@ -62,3 +69,4 @@
   <script type="module" src="./landmark.js"></script>
 </body>
 </html>
+
