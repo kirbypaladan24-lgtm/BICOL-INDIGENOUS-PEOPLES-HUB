@@ -74,6 +74,8 @@
       <a id="chartsBtn" class="ghost hidden" href="charts.html" data-i18n="data_charts">Data Charts</a>
       <button id="changePassBtn" class="ghost hidden" type="button" data-i18n="change_password">Change Password</button>
       <a class="ghost" href="policy.html" data-i18n="footer_policy">Privacy &amp; Content Policy</a>
+      <button id="loginBtn" class="ghost" data-i18n="login">Login</button>
+      <button id="logoutBtn" class="solid hidden" data-i18n="logout">Logout</button>
       <div class="sidebar-controls">
         <select
           id="languageSelect"
@@ -83,8 +85,6 @@
           aria-label="Choose language"
         ></select>
       </div>
-      <button id="loginBtn" class="ghost" data-i18n="login">Login</button>
-      <button id="logoutBtn" class="solid hidden" data-i18n="logout">Logout</button>
     </div>
   </aside>
 
@@ -97,13 +97,6 @@
       <a href="#contact" data-i18n="nav_contact">Contact</a>
     </div>
     <div class="mobile-actions">
-      <select
-        id="mobileLanguageSelect"
-        class="language-select full"
-        data-language-selector
-        data-i18n-aria-label="choose_language"
-        aria-label="Choose language"
-      ></select>
       <button id="mobileThemeToggle" class="theme-toggle" aria-label="Toggle theme">
         <span class="toggle-thumb"></span>
         <span class="toggle-icon sun">&#9728;</span>
@@ -116,6 +109,13 @@
       <a class="ghost full" href="policy.html" data-i18n="footer_policy">Privacy &amp; Content Policy</a>
       <button id="mobileLoginBtn" class="ghost full" data-i18n="login">Login</button>
       <button id="mobileLogoutBtn" class="solid full hidden" data-i18n="logout">Logout</button>
+      <select
+        id="mobileLanguageSelect"
+        class="language-select full"
+        data-language-selector
+        data-i18n-aria-label="choose_language"
+        aria-label="Choose language"
+      ></select>
     </div>
   </div>
 
@@ -125,8 +125,8 @@
       <h2 data-i18n="hero_title">Celebrate, learn, and protect the diverse cultures across Bicol.</h2>
        <p class="lede" data-i18n="hero_lede">
        Welcome to the Bicol Indigenous Peoples Hub. 
-       This is a community-centered space dedicated to the vibrant heritage of Bicol’s Indigenous peoples — from the Agta and Kabihug to the Isarog and beyond.
-       Discover living stories, ancestral knowledge, languages still spoken, and deep connections to land and sea — shared respectfully and with consent.
+       This is a community-centered space dedicated to the vibrant heritage of Bicol&#8217;s Indigenous peoples &#8212; from the Agta and Kabihug to the Isarog and beyond.
+       Discover living stories, ancestral knowledge, languages still spoken, and deep connections to land and sea &#8212; shared respectfully and with consent.
        Celebrate these cultures, learn their truths, and support their safeguarding for generations to come.
       </p>
 
@@ -233,7 +233,7 @@
       <h3 data-i18n="about_title">Indigenous Peoples of Bicol</h3>
       <p data-i18n="about_p1">
         The Bicol Region is home to diverse Indigenous Peoples, including the Agta of Mt. Isarog and Mt. Malinao and communities around Mt. Bulusan. Their
-        histories, oral traditions, weaving, music, and ecological knowledge are vital to the region’s identity.
+        histories, oral traditions, weaving, music, and ecological knowledge are vital to the region&#8217;s identity.
       </p>
       <p data-i18n="about_p2">
         This hub gathers verified references, community contributions, and multimedia resources to amplify voices, protect rights, and encourage respectful engagement.
@@ -300,7 +300,7 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <span data-i18n="footer_copyright">© 2026 Bicol Indigenous Peoples Hub. All rights reserved.</span>
+      <span data-i18n="footer_copyright">&copy; 2026 Bicol Indigenous Peoples Hub. All rights reserved.</span>
        <span data-i18n="footer_developed_by">Developed By Kirby Paladan</span>
       <span data-i18n="footer_built">Built with community care</span>
     </div>
@@ -309,9 +309,9 @@
   <div id="toast" class="toast hidden" aria-live="polite"></div>
 
   <dialog id="mediaLightbox" class="lightbox">
-    <button id="lightboxPrev" class="icon-btn lightbox-nav" aria-label="Previous image" data-i18n-aria-label="previous_image">‹</button>
+    <button id="lightboxPrev" class="icon-btn lightbox-nav" aria-label="Previous image" data-i18n-aria-label="previous_image">&#8249;</button>
     <img id="lightboxImg" alt="Post media full size" />
-    <button id="lightboxNext" class="icon-btn lightbox-nav" aria-label="Next image" data-i18n-aria-label="next_image">›</button>
+    <button id="lightboxNext" class="icon-btn lightbox-nav" aria-label="Next image" data-i18n-aria-label="next_image">&#8250;</button>
     <button id="lightboxClose" class="icon-btn lightbox-close" aria-label="Close image" data-i18n-aria-label="close_image">&#215;</button>
   </dialog>
 
@@ -421,6 +421,7 @@
   <script type="module" src="./app.js"></script>
 </body>
 </html>
+
 
 
 
