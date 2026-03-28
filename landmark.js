@@ -65,7 +65,16 @@ async function loadLandmark() {
 
     if (item.coverUrl && coverEl) {
       coverEl.style.display = "block";
-      coverEl.innerHTML = `<img src="${item.coverUrl}" alt="${item.name || "Landmark"}" style="width:100%; border-radius:12px; display:block;"/>`;
+      coverEl.innerHTML = `<img src="${item.coverUrl}" alt="${item.name || "Landmark"}" loading="lazy" decoding="async" class="progressive-image is-loading" style="width:100%; border-radius:12px; display:block;"/>`;
+      const coverImg = coverEl.querySelector("img");
+      if (coverImg) {
+        const markReady = () => {
+          coverImg.classList.remove("is-loading");
+          coverImg.classList.add("is-ready");
+        };
+        if (coverImg.complete && coverImg.naturalWidth > 0) markReady();
+        else coverImg.addEventListener("load", markReady, { once: true });
+      }
     } else if (coverEl) {
       coverEl.style.display = "none";
       coverEl.innerHTML = "";
