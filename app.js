@@ -29,6 +29,7 @@ import { registerServiceWorker } from "./pwa.js";
 const loginBtn = document.getElementById("loginBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const profileBtn = document.getElementById("profileBtn");
+const chartsBtn = document.getElementById("chartsBtn");
 const changePassBtn = document.getElementById("changePassBtn");
 const themeToggle = document.getElementById("themeToggle");
 const menuToggle = document.getElementById("menuToggle");
@@ -46,6 +47,7 @@ const mobileMenu = document.getElementById("mobileMenu");
 const mobileLoginBtn = document.getElementById("mobileLoginBtn");
 const mobileLogoutBtn = document.getElementById("mobileLogoutBtn");
 const mobileProfileBtn = document.getElementById("mobileProfileBtn");
+const mobileChartsBtn = document.getElementById("mobileChartsBtn");
 const mobileChangePassBtn = document.getElementById("mobileChangePassBtn");
 const mobileThemeToggle = document.getElementById("mobileThemeToggle");
 const userPostDialog = document.getElementById("userPostDialog");
@@ -1275,6 +1277,8 @@ observeAuth(async (user) => {
   mobileProfileBtn?.classList.toggle("hidden", !authed);
   mobileChangePassBtn?.classList.toggle("hidden", !authed);
   const isAdminUser = isAdmin(user);
+  chartsBtn?.classList.toggle("hidden", !isAdminUser);
+  mobileChartsBtn?.classList.toggle("hidden", !isAdminUser);
   newPostBtn.classList.toggle("hidden", !authed || isAdminUser);
   cachedAuthorName = null;
 
