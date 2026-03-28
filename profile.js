@@ -51,6 +51,29 @@ let currentEditPost = null;
 let currentMedia = [];
 let saving = false;
 
+function enhancePreviewImage(imgEl) {
+  if (!imgEl) return;
+  imgEl.loading = "lazy";
+  imgEl.decoding = "async";
+  imgEl.width = 96;
+  imgEl.height = 96;
+  imgEl.classList.add("progressive-image");
+
+  const markReady = () => {
+    imgEl.classList.remove("is-loading");
+    imgEl.classList.add("is-ready");
+  };
+
+  if (imgEl.complete) {
+    markReady();
+    return;
+  }
+
+  imgEl.classList.add("is-loading");
+  imgEl.addEventListener("load", markReady, { once: true });
+  imgEl.addEventListener("error", () => imgEl.classList.remove("is-loading"), { once: true });
+}
+
 function renderProfileIdentity({ username = "--", email = "--" } = {}) {
   if (profileUsername) profileUsername.textContent = username;
   if (profileEmail) profileEmail.textContent = email;
@@ -250,6 +273,7 @@ function showExistingMedia(media) {
     tile.className = "preview-tile";
     tile.innerHTML = `<img src="${src}" alt="Existing media" loading="lazy" />`;
     profileImagePreview.appendChild(tile);
+    enhancePreviewImage(tile.querySelector("img"));
   });
 }
 
@@ -355,6 +379,7 @@ profileImageInput?.addEventListener("change", () => {
     tile.className = "preview-tile";
     tile.innerHTML = `<img src="${url}" alt="${file.name}" loading="lazy" />`;
     profileImagePreview.appendChild(tile);
+    enhancePreviewImage(tile.querySelector("img"));
   });
 });
 
