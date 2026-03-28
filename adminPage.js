@@ -1,7 +1,6 @@
+import { initI18n } from "./i18n.js";
+
 const target = "profile.html";
 
-if (location.pathname.endsWith("/admin.html") || location.pathname.endsWith("\\admin.html")) {
-  location.replace(target);
-} else {
-  location.replace(target);
-}
+initI18n();
+location.replace(target);
