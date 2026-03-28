@@ -113,7 +113,7 @@ let lastToastAt = 0;
 
 function setTrackLocationButtonLabel(labelKey = "btn_my_location") {
   if (!trackLocationBtn) return;
-  trackLocationBtn.innerHTML = `<span class="icon">⌖</span> ${t(labelKey)}`;
+  trackLocationBtn.innerHTML = `<span class="icon">&#8982;</span> ${t(labelKey)}`;
 }
 
 function localizeGeoSource(source) {
