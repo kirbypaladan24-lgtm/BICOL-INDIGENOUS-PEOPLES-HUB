@@ -241,6 +241,11 @@ select:focus-visible,
   background-color: #0f1911 ; 
 }
 
+.language-select option {
+  color: #1b1f1a;
+  background: #ffffff;
+}
+
 .language-select:focus {
   outline: 2px solid rgba(47, 77, 54, 0.45);
   outline-offset: 1px;
@@ -3246,7 +3251,7 @@ textarea#landmarkSummary {
   }
   .mobile-menu {
     position: fixed;
-    top: 104px;
+    top: 84px;
     left: 0;
     right: 0;
     background: rgba(9, 14, 10, 0.96);
@@ -3306,6 +3311,9 @@ textarea#landmarkSummary {
   .mobile-menu .language-select {
     min-width: 0;
     height: auto;
+    background: rgba(15, 25, 17, 0.98);
+    border-color: rgba(90, 154, 106, 0.4);
+    color: var(--text);
   }
 
   /* adjust gallery sizes for narrower screens */
@@ -3395,7 +3403,7 @@ textarea#landmarkSummary {
     padding-top: 120px;
   }
   .mobile-menu {
-    top: 120px;
+    top: 78px;
   }
   .post-row {
     padding: 16px;
@@ -3555,6 +3563,10 @@ textarea#landmarkSummary {
   color: #1b1f1a;
   border-color: #d4dcca;
   background: transparent;
+}
+
+[data-theme="light"] .mobile-menu .language-select {
+  background: #ffffff;
 }
 
 [data-theme="light"] .insta-carousel {
