@@ -3,6 +3,7 @@ import { initI18n, t } from "./i18n.js";
 import { showToast } from "./ui.js";
 import { registerServiceWorker } from "./pwa.js";
 import { initAdmin } from "./admin.js";
+import { initRevealAnimations } from "./motion.js";
 
 const themeToggle = document.getElementById("themeToggle");
 const menuToggle = document.getElementById("menuToggle");
@@ -161,4 +162,5 @@ observeAuth(async (user) => {
 
 initI18n();
 initTheme();
+initRevealAnimations();
 registerServiceWorker();
