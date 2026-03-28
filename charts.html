@@ -20,6 +20,7 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body class="has-desktop-shortcuts">
+    <a class="skip-link" href="#chartsMain" data-i18n="skip_to_content">Skip to content</a>
     <header class="topbar">
       <div class="brand">
         <span class="brand-mark" aria-hidden="true">
@@ -84,11 +85,12 @@
         <a class="ghost full" href="admin.html" data-i18n="admin_tools">Admin Tools</a>
         <a class="ghost full" href="charts.html" aria-current="page" data-i18n="data_charts">Data Charts</a>
         <button id="mobileChangePassBtn" class="ghost full" type="button" data-i18n="change_password">Change Password</button>
+        <a class="ghost full" href="policy.html" data-i18n="footer_policy">Privacy &amp; Content Policy</a>
         <button id="mobileLogoutBtn" class="solid full" data-i18n="logout">Logout</button>
       </div>
     </div>
 
-    <main class="section profile-dashboard">
+    <main id="chartsMain" class="section profile-dashboard">
       <section class="profile-overview-shell">
         <div class="profile-overview-card">
           <div class="profile-overview-copy">
@@ -103,6 +105,20 @@
             <p><strong data-i18n="email">Email</strong>: <span id="chartEmail">--</span></p>
             <p><strong data-i18n="access_label">Access:</strong> <span id="chartRole">--</span></p>
           </div>
+        </div>
+        <div class="workspace-meta">
+          <article class="workspace-meta-pill">
+            <span data-i18n="date_range_label">Date range</span>
+            <strong id="chartRangeSummary">--</strong>
+          </article>
+          <article class="workspace-meta-pill">
+            <span data-i18n="community_posts_label">Community Posts</span>
+            <strong id="chartTrackedPosts">0</strong>
+          </article>
+          <article class="workspace-meta-pill">
+            <span data-i18n="stat_updated">Last update</span>
+            <strong id="chartLastUpdated">--</strong>
+          </article>
         </div>
       </section>
 
@@ -204,6 +220,7 @@
       </form>
     </dialog>
 
+    <script src="/api/runtime-config.js"></script>
     <script type="module" src="./charts.js"></script>
   </body>
 </html>
