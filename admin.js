@@ -43,6 +43,11 @@ const adminPostsChart = document.getElementById("adminPostsChart");
 const adminUsersChart = document.getElementById("adminUsersChart");
 const adminLandmarksChart = document.getElementById("adminLandmarksChart");
 const adminEngagementChart = document.getElementById("adminEngagementChart");
+const adminWorkspacePosts = document.getElementById("adminWorkspacePosts");
+const adminWorkspaceLandmarks = document.getElementById("adminWorkspaceLandmarks");
+const adminWorkspaceUpdated = document.getElementById("adminWorkspaceUpdated");
+const adminPostsCount = document.getElementById("adminPostsCount");
+const adminLandmarksCount = document.getElementById("adminLandmarksCount");
 
 let currentId = null;
 let currentUser = null;
@@ -142,6 +147,31 @@ function formatCompactNumber(value) {
     notation: Math.abs(value) >= 1000 ? "compact" : "standard",
     maximumFractionDigits: 0,
   }).format(Number(value) || 0);
+}
+
+function formatWorkspaceTimestamp(date = new Date()) {
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function updateAdminWorkspaceMeta({ postsCount, landmarksCount, updatedAt = new Date() } = {}) {
+  if (typeof postsCount === "number") {
+    const value = formatCompactNumber(postsCount);
+    if (adminWorkspacePosts) adminWorkspacePosts.textContent = value;
+    if (adminPostsCount) adminPostsCount.textContent = value;
+  }
+  if (typeof landmarksCount === "number") {
+    const value = formatCompactNumber(landmarksCount);
+    if (adminWorkspaceLandmarks) adminWorkspaceLandmarks.textContent = value;
+    if (adminLandmarksCount) adminLandmarksCount.textContent = value;
+  }
+  if (adminWorkspaceUpdated) {
+    adminWorkspaceUpdated.textContent = formatWorkspaceTimestamp(updatedAt);
+  }
 }
 
 function buildDailySeries(items, resolveDate, days = 30) {
@@ -723,6 +753,7 @@ async function loadLandmarks() {
   try {
     // CRITICAL: Force server read for production P2P reliability
     const items = await fetchLandmarks(true);
+    updateAdminWorkspaceMeta({ landmarksCount: items.length });
     if (!items.length) {
       landmarksList.innerHTML = "<p class='hint'>No landmarks yet.</p>";
       return [];
@@ -794,6 +825,7 @@ async function loadAdminPosts() {
   try {
     // CRITICAL: Force server read for production P2P reliability
     const posts = await fetchPosts(true);
+    updateAdminWorkspaceMeta({ postsCount: posts?.length || 0 });
     if (!posts || posts.length === 0) {
       listContainer.innerHTML = "<p class='hint'>No posts yet.</p>";
       return [];
