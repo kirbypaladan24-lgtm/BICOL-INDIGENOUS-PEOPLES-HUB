@@ -1,574 +1,333 @@
-import { observeAuth, fetchPosts, savePost, deletePost, logout, changePassword, auth, getUserProfile, isAdmin, fetchLandmarks } from "./auth.js";
-import { uploadImages } from "./imgbb.js";
-import { showToast } from "./ui.js";
-import { registerServiceWorker } from "./pwa.js";
-import { initAdmin } from "./admin.js";
-
-const themeToggle = document.getElementById("themeToggle");
-const logoutBtn = document.getElementById("logoutBtn");
-const changePassBtn = document.getElementById("changePassBtn");
-const menuToggle = document.getElementById("menuToggle");
-const mobileMenu = document.getElementById("mobileMenu");
-const mobileThemeToggle = document.getElementById("mobileThemeToggle");
-const mobileChangePassBtn = document.getElementById("mobileChangePassBtn");
-const mobileLogoutBtn = document.getElementById("mobileLogoutBtn");
-
-const profileStatus = document.getElementById("profileStatus");
-const profilePosts = document.getElementById("profilePosts");
-const profileEmpty = document.getElementById("profileEmpty");
-const profileUsername = document.getElementById("profileUsername");
-const profileEmail = document.getElementById("profileEmail");
-const profileRole = document.getElementById("profileRole");
-const profileOwnedCount = document.getElementById("profileOwnedCount");
-const profileCommunityCount = document.getElementById("profileCommunityCount");
-const profileLandmarkCount = document.getElementById("profileLandmarkCount");
-const profileAdminTools = document.getElementById("profileAdminTools");
-const profileWorkspaceNote = document.getElementById("profileWorkspaceNote");
-const adminQuickLink = document.getElementById("adminQuickLink");
-const landmarkQuickLink = document.getElementById("landmarkQuickLink");
-
-const editDialog = document.getElementById("profileEditDialog");
-const closeEdit = document.getElementById("closeProfileEdit");
-const profilePostTitle = document.getElementById("profilePostTitle");
-const profileImageInput = document.getElementById("profileImageInput");
-const profileImagePreview = document.getElementById("profileImagePreview");
-const profileEditor = document.getElementById("profileEditor");
-const profileToolbar = document.getElementById("profileToolbar");
-const profileSaveBtn = document.getElementById("profileSaveBtn");
-const changePassDialog = document.getElementById("changePassDialog");
-const closeChangePass = document.getElementById("closeChangePass");
-const changePassForm = document.getElementById("changePassForm");
-const currentPassword = document.getElementById("currentPassword");
-const newPassword = document.getElementById("newPassword");
-const confirmPassword = document.getElementById("confirmPassword");
-
-const THEME_KEY = "bicol-ip-theme";
-const MAX_IMAGES_PER_POST = 10;
-
-let currentUser = null;
-let cachedAuthorName = null;
-let currentEditPost = null;
-let currentMedia = [];
-let saving = false;
-
-function enhancePreviewImage(imgEl) {
-  if (!imgEl) return;
-  imgEl.loading = "lazy";
-  imgEl.decoding = "async";
-  imgEl.width = 96;
-  imgEl.height = 96;
-  imgEl.classList.add("progressive-image");
-
-  const markReady = () => {
-    imgEl.classList.remove("is-loading");
-    imgEl.classList.add("is-ready");
-  };
-
-  if (imgEl.complete) {
-    markReady();
-    return;
-  }
-
-  imgEl.classList.add("is-loading");
-  imgEl.addEventListener("load", markReady, { once: true });
-  imgEl.addEventListener("error", () => imgEl.classList.remove("is-loading"), { once: true });
-}
-
-function renderProfileIdentity({ username = "--", email = "--" } = {}) {
-  if (profileUsername) profileUsername.textContent = username;
-  if (profileEmail) profileEmail.textContent = email;
-}
-
-function renderWorkspaceSummary({ role = "Guest", ownedCount = 0, communityCount = 0, landmarkCount = 0, admin = false } = {}) {
-  if (profileRole) profileRole.textContent = role;
-  if (profileOwnedCount) profileOwnedCount.textContent = String(ownedCount);
-  if (profileCommunityCount) profileCommunityCount.textContent = String(communityCount);
-  if (profileLandmarkCount) profileLandmarkCount.textContent = String(landmarkCount);
-  if (profileAdminTools) profileAdminTools.textContent = admin ? "Admin" : "Profile";
-  if (profileWorkspaceNote) {
-    profileWorkspaceNote.textContent = admin
-      ? "You can moderate posts and map entries from this dashboard."
-      : "Manage your account and personal posts here.";
-  }
-  adminQuickLink?.classList.toggle("hidden", !admin);
-  landmarkQuickLink?.classList.toggle("hidden", !admin);
-}
-
-function applyTheme(theme) {
-  const value = theme === "light" ? "light" : "dark";
-  document.documentElement.dataset.theme = value;
-  localStorage.setItem(THEME_KEY, value);
-}
-
-function initTheme() {
-  const stored = localStorage.getItem(THEME_KEY);
-  if (stored === "light" || stored === "dark") {
-    applyTheme(stored);
-    return;
-  }
-  const prefersLight = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
-  applyTheme(prefersLight ? "light" : "dark");
-}
-
-function normalizeContent(html) {
-  if (!html) return "";
-  const hasTags = /<\s*(p|div|br|ul|ol|li|blockquote|h\d)\b/i.test(html);
-  if (!hasTags && html.includes("\n")) {
-    return html.replace(/\n/g, "<br>");
-  }
-  return html;
-}
-
-async function resolveAuthorName() {
-  if (!currentUser) return "Contributor";
-  if (cachedAuthorName) return cachedAuthorName;
-  try {
-    const profile = await getUserProfile(currentUser.uid);
-    if (profile?.username) {
-      cachedAuthorName = profile.username;
-      return cachedAuthorName;
-    }
-  } catch (e) {
-    console.warn("Profile lookup failed", e);
-  }
-  if (currentUser.displayName) {
-    cachedAuthorName = currentUser.displayName;
-    return cachedAuthorName;
-  }
-  if (currentUser.email) {
-    cachedAuthorName = currentUser.email.split("@")[0];
-    return cachedAuthorName;
-  }
-  return "Contributor";
-}
-
-function isOwnedPost(post, authorName) {
-  if (!post) return false;
-  if (post.authorId && currentUser && post.authorId === currentUser.uid) return true;
-  const author = (post.author || "").toLowerCase();
-  if (authorName && author === authorName.toLowerCase()) return true;
-  if (currentUser?.email) {
-    const prefix = currentUser.email.split("@")[0].toLowerCase();
-    if (author === prefix) return true;
-  }
-  return false;
-}
-
-function renderPosts(posts) {
-  if (!profilePosts) return;
-  profilePosts.innerHTML = "";
-  if (!posts.length) {
-    profileEmpty?.classList.remove("hidden");
-    return;
-  }
-  profileEmpty?.classList.add("hidden");
-
-  posts.forEach((p) => {
-    const article = document.createElement("article");
-    article.className = "post-row";
-    const updated = p.updatedAt?.toDate ? p.updatedAt.toDate() : null;
-    article.innerHTML = `
-      <header class="post-head">
-        <div class="post-avatar">${(p.author || "C")[0]?.toUpperCase() || "C"}</div>
+<!DOCTYPE html>
+<html lang="en" data-page-title-key="page_title_profile">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b120d" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="description" content="Manage your stories, account settings, and admin tools in the Bicol Indigenous Peoples Hub dashboard." />
+    <title>Profile | Bicol Indigenous Peoples Hub</title>
+    <link rel="icon" type="image/png" href="./favicon.png" sizes="64x64" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Manrope:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <img
+            src="./brand-mark-128.png"
+            srcset="./brand-mark-128.png 1x, ./brand-mark.png 2x"
+            alt="Bicol Indigenous Peoples Hub Logo"
+            width="512"
+            height="512"
+            loading="eager"
+            decoding="async"
+            fetchpriority="high"
+          />
+        </span>
         <div>
-          <p class="post-author">${p.author || "Contributor"}</p>
-          <p class="post-meta">${updated ? `Updated ${updated.toLocaleDateString()}` : "Recently shared"}</p>
+          <h1 data-i18n="page_title">Bicol Indigenous Peoples Hub</h1>
+          <p data-i18n="profile">Profile</p>
         </div>
-      </header>
-      <h4 class="post-title">${p.title || "Untitled post"}</h4>
-      <div class="post-body">${p.content || ""}</div>
-      <div class="post-actions">
-        <button class="ghost small" data-action="edit" data-id="${p.id}">Edit</button>
-        <button class="ghost small danger" data-action="delete" data-id="${p.id}">Delete</button>
       </div>
-    `;
-    profilePosts.appendChild(article);
-  });
-}
+      <nav class="nav">
+        <a href="index.html#home">Home</a>
+        <a href="index.html#map">Map</a>
+        <a href="index.html#posts">Posts</a>
+        <a href="index.html#about">About</a>
+        <a href="index.html#contact">Contact</a>
+      </nav>
+      <div class="auth-cta">
+        <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
+          <span class="toggle-thumb"></span>
+          <span class="toggle-icon sun">&#9728;</span>
+          <span class="toggle-icon moon">&#9790;</span>
+        </button>
+        <a id="profileBtn" class="ghost" href="profile.html">Profile</a>
+        <button id="changePassBtn" class="ghost" type="button">Change Password</button>
+        <button id="logoutBtn" class="solid">Logout</button>
+        <button id="menuToggle" class="ghost icon-only" aria-label="Toggle menu" aria-expanded="false">&#9776;</button>
+      </div>
+    </header>
 
-function bindToolbar(editor, toolbar) {
-  if (!editor || !toolbar) return;
-  const buttons = Array.from(toolbar.querySelectorAll("button"));
-  const selects = Array.from(toolbar.querySelectorAll("select"));
-  const stateful = ["bold", "italic", "underline", "insertOrderedList", "insertUnorderedList", "justifyLeft", "justifyCenter", "justifyRight"];
-  const focusEditor = () => editor.focus({ preventScroll: true });
-  const normalizeBlockValue = (value) => {
-    if (!value) return value;
-    if (value.startsWith("<")) return value;
-    return `<${value}>`;
-  };
+    <div id="mobileMenu" class="mobile-menu">
+      <div class="mobile-links">
+        <a href="index.html#home">Home</a>
+        <a href="index.html#map">Map</a>
+        <a href="index.html#posts">Posts</a>
+        <a href="index.html#about">About</a>
+        <a href="index.html#contact">Contact</a>
+      </div>
+      <div class="mobile-actions">
+        <button id="mobileThemeToggle" class="theme-toggle" aria-label="Toggle theme">
+          <span class="toggle-thumb"></span>
+          <span class="toggle-icon sun">&#9728;</span>
+          <span class="toggle-icon moon">&#9790;</span>
+        </button>
+        <button id="mobileChangePassBtn" class="ghost full" type="button">Change Password</button>
+        <button id="mobileLogoutBtn" class="solid full">Logout</button>
+      </div>
+    </div>
 
-  function updateStates() {
-    buttons.forEach((btn) => {
-      const cmd = btn.dataset.cmd;
-      if (stateful.includes(cmd)) {
-        try {
-          const active = document.queryCommandState(cmd);
-          btn.classList.toggle("active", !!active);
-        } catch (e) {}
-      }
-    });
-  }
+    <main class="section profile-dashboard">
+      <section class="profile-overview-shell">
+        <div class="profile-overview-card">
+          <div class="profile-overview-copy">
+            <p class="eyebrow" data-i18n="workspace">Workspace</p>
+            <h2 data-i18n="your_dashboard">Your dashboard</h2>
+            <p id="profileStatus" class="section-desc" data-i18n="loading_workspace">Loading your workspace...</p>
+          </div>
+          <div class="profile-identity">
+            <p><strong>Username:</strong> <span id="profileUsername">--</span></p>
+            <p><strong>Email:</strong> <span id="profileEmail">--</span></p>
+            <p><strong>Access:</strong> <span id="profileRole">Guest</span></p>
+          </div>
+        </div>
 
-  toolbar.addEventListener("mousedown", (e) => {
-    if (e.target.closest("button")) e.preventDefault();
-  });
+        <div class="profile-summary-grid">
+          <article class="profile-stat-card">
+            <span class="profile-stat-label" data-i18n="your_posts_label">Your Posts</span>
+            <strong id="profileOwnedCount">0</strong>
+            <p data-i18n="your_posts_desc">Stories connected to your account.</p>
+          </article>
+          <article class="profile-stat-card">
+            <span class="profile-stat-label" data-i18n="community_posts_label">Community Posts</span>
+            <strong id="profileCommunityCount">0</strong>
+            <p data-i18n="community_posts_desc">Total published stories across the hub.</p>
+          </article>
+          <article class="profile-stat-card">
+            <span class="profile-stat-label" data-i18n="mapped_landmarks_label">Mapped Landmarks</span>
+            <strong id="profileLandmarkCount">0</strong>
+            <p data-i18n="mapped_landmarks_desc">Active places currently visible on the map.</p>
+          </article>
+          <article class="profile-stat-card">
+            <span class="profile-stat-label" data-i18n="workspace_label">Workspace</span>
+            <strong id="profileAdminTools">Profile</strong>
+            <p id="profileWorkspaceNote" data-i18n="workspace_note_profile">Manage your account and personal posts here.</p>
+          </article>
+        </div>
 
-  toolbar.addEventListener("click", (e) => {
-    const btn = e.target.closest("button");
-    if (!btn) return;
-    const cmd = btn.dataset.cmd;
-    const value = btn.dataset.value || null;
-    focusEditor();
-    if (cmd === "createLink") {
-      const url = prompt("Enter URL");
-      if (url) document.execCommand(cmd, false, url);
-    } else if (cmd === "formatBlock") {
-      document.execCommand(cmd, false, normalizeBlockValue(value || "p"));
-    } else {
-      document.execCommand(cmd, false, value);
-    }
-    updateStates();
-  });
+        <div class="profile-quick-actions">
+          <a href="#profilePostsSection" class="ghost small">Your Posts</a>
+          <a href="#adminPanel" id="adminQuickLink" class="ghost small hidden" data-i18n="admin_tools">Admin Tools</a>
+          <a href="#landmarkWorkspace" id="landmarkQuickLink" class="ghost small hidden" data-i18n="landmarks_label">Landmarks</a>
+        </div>
+      </section>
 
-  selects.forEach((sel) =>
-    sel.addEventListener("change", () => {
-      const cmd = sel.dataset.cmd;
-      const value = sel.value || "";
-      if (!cmd || !value) return;
-      focusEditor();
-      if (cmd === "formatBlock") {
-        document.execCommand(cmd, false, normalizeBlockValue(value));
-        return;
-      }
-      document.execCommand(cmd, false, value);
-    })
-  );
+      <section id="adminPanel" class="admin hidden profile-admin-panel">
+        <div class="admin-bar">
+          <div class="admin-heading">
+            <p class="admin-kicker" data-i18n="dashboard">Dashboard</p>
+            <h3 data-i18n="admin_panel">Admin Panel</h3>
+            <p class="admin-subtitle" data-i18n="admin_subtitle">Quick access to story and landmark management without leaving your profile workspace.</p>
+          </div>
+          <div class="status">
+            <span class="dot"></span>
+            <p id="adminStatus" data-i18n="restricted">Restricted</p>
+          </div>
+        </div>
+        <div id="profileEditTools" class="admin-grid admin-grid-posts">
+          <div class="form admin-card">
+            <div class="admin-card-head">
+              <div>
+                <p class="admin-card-eyebrow">Story Editor</p>
+                <h4>Compose or update a post</h4>
+              </div>
+              <p class="admin-card-note">Publish new stories or revise existing entries while keeping reader-facing content tidy.</p>
+            </div>
+            <div class="admin-fieldset">
+              <label>Title</label>
+              <input type="text" id="postTitle" placeholder="Post title" />
+            </div>
+            <div class="admin-fieldset">
+              <label>Cover Images (optional, up to 10)</label>
+              <input type="file" id="imageInput" accept="image/*" multiple />
+              <div id="imagePreviewAdmin" class="media-preview"></div>
+            </div>
+            <div class="admin-editor-shell">
+              <div class="admin-fieldset">
+                <label>Formatting tools</label>
+                <div class="toolbar">
+                  <button data-cmd="bold" type="button">Bold</button>
+                  <button data-cmd="italic" type="button">Italic</button>
+                  <select data-cmd="fontName">
+                    <option value="">Font</option>
+                    <option value="Sora">Sora</option>
+                    <option value="Manrope">Manrope</option>
+                    <option value="Georgia">Georgia</option>
+                    <option value="Times New Roman">Times New Roman</option>
+                    <option value="Arial">Arial</option>
+                  </select>
+                  <button data-cmd="insertUnorderedList" type="button">List</button>
+                  <button data-cmd="formatBlock" data-value="h3" type="button">H3</button>
+                  <button data-cmd="formatBlock" data-value="h4" type="button">H4</button>
+                  <button data-cmd="createLink" type="button">Link</button>
+                </div>
+              </div>
+              <div class="admin-fieldset">
+                <label>Body content</label>
+                <div id="richEditor" class="editor" contenteditable="true"></div>
+              </div>
+            </div>
+            <div class="admin-actions">
+              <button id="savePostBtn" class="solid full">Publish / Update</button>
+              <button id="resetPostBtn" class="ghost full">Reset</button>
+            </div>
+          </div>
+          <div class="admin-side-panel">
+            <div class="admin-side-head">
+              <p class="admin-card-eyebrow">Library</p>
+              <h4>All Published Posts</h4>
+            </div>
+            <div id="adminPosts" class="list admin-list"></div>
+          </div>
+        </div>
 
-  editor.addEventListener("paste", (e) => {
-    e.preventDefault();
-    const text = (e.clipboardData || window.clipboardData).getData("text/plain");
-    if (text) document.execCommand("insertText", false, text);
-  });
+        <div id="landmarkWorkspace" class="admin-grid admin-grid-landmarks">
+          <div class="form admin-card">
+            <div class="admin-card-head">
+              <div>
+                <p class="admin-card-eyebrow">Map Editor</p>
+                <h4>Landmarks and place markers</h4>
+              </div>
+              <p class="admin-card-note">Update the public map from the same profile workspace for faster moderation.</p>
+            </div>
+            <div class="admin-field-grid">
+              <div class="admin-fieldset">
+                <label>Name</label>
+                <input type="text" id="landmarkName" placeholder="Landmark name" />
+              </div>
+              <div class="admin-fieldset">
+                <label>Marker Color</label>
+                <select id="landmarkColor">
+                  <option value="#2f5c3a">Forest Green</option>
+                  <option value="#5a9a6a">Moss</option>
+                  <option value="#c36b2a">Clay</option>
+                  <option value="#2b7bff">Blue</option>
+                  <option value="#8e44ad">Purple</option>
+                  <option value="#c0392b">Red</option>
+                </select>
+              </div>
+              <div class="admin-fieldset">
+                <label>Latitude</label>
+                <input type="number" id="landmarkLat" placeholder="e.g. 13.6693" step="0.000001" />
+              </div>
+              <div class="admin-fieldset">
+                <label>Longitude</label>
+                <input type="number" id="landmarkLng" placeholder="e.g. 123.3307" step="0.000001" />
+              </div>
+            </div>
+            <div class="admin-fieldset">
+              <label>Summary</label>
+              <textarea id="landmarkSummary" rows="4" placeholder="Short description"></textarea>
+            </div>
+            <div class="admin-fieldset">
+              <label>Cover Photo (optional)</label>
+              <input type="file" id="landmarkCoverInput" accept="image/*" />
+            </div>
+            <div class="map-tools">
+              <button id="landmarkPickBtn" class="ghost small" type="button">Pick From Map</button>
+              <span class="map-help">Pan the map while pick mode is active to place the marker precisely.</span>
+            </div>
+            <div id="landmarkMap" class="map admin-map"></div>
+            <div class="admin-actions">
+              <button id="saveLandmarkBtn" class="solid full">Save Landmark</button>
+              <button id="resetLandmarkBtn" class="ghost full">Reset</button>
+            </div>
+          </div>
+          <div class="admin-side-panel">
+            <div class="admin-side-head">
+              <p class="admin-card-eyebrow">Directory</p>
+              <h4>All Landmarks</h4>
+            </div>
+            <div id="adminLandmarks" class="list admin-list"></div>
+          </div>
+        </div>
+      </section>
 
-  editor.addEventListener("keydown", (e) => {
-    if (!(e.ctrlKey || e.metaKey)) return;
-    const key = e.key.toLowerCase();
-    if (!["b", "i", "u"].includes(key)) return;
-    e.preventDefault();
-    focusEditor();
-    if (key === "b") document.execCommand("bold");
-    if (key === "i") document.execCommand("italic");
-    if (key === "u") document.execCommand("underline");
-    updateStates();
-  });
+      <section id="profilePostsSection" class="profile-posts-section">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow" data-i18n="personal_library">Personal Library</p>
+          <h3 data-i18n="your_posts_title">Your posts</h3>
+          <p class="section-desc" data-i18n="your_posts_section_desc">Review and manage the stories tied to your account.</p>
+        </div>
+      </div>
+      <div id="profilePosts" class="posts-feed"></div>
+      <div id="profileEmpty" class="empty hidden" data-i18n="no_posts_yet_short">No posts yet.</div>
+      </section>
+    </main>
 
-  ["keyup", "mouseup", "blur"].forEach((evt) => editor.addEventListener(evt, updateStates));
-}
+    <div id="toast" class="toast hidden" aria-live="polite"></div>
 
-function showExistingMedia(media) {
-  profileImagePreview.innerHTML = "";
-  (media || []).forEach((src) => {
-    const tile = document.createElement("div");
-    tile.className = "preview-tile";
-    tile.innerHTML = `<img src="${src}" alt="Existing media" loading="lazy" />`;
-    profileImagePreview.appendChild(tile);
-    enhancePreviewImage(tile.querySelector("img"));
-  });
-}
+    <dialog id="changePassDialog" class="modal">
+      <div class="modal-header">
+        <h3>Change Password</h3>
+        <button class="icon-btn" id="closeChangePass">&times;</button>
+      </div>
+      <form id="changePassForm" class="form">
+        <label>Current password</label>
+        <input type="password" id="currentPassword" required />
+        <label>New password</label>
+        <input type="password" id="newPassword" required />
+        <label>Confirm new password</label>
+        <input type="password" id="confirmPassword" required />
+        <button type="submit" class="solid full">Update Password</button>
+      </form>
+    </dialog>
 
-async function loadProfilePosts() {
-  if (!currentUser) return;
-  profilePosts?.classList.add("loading");
-  profilePosts?.setAttribute("aria-busy", "true");
-  if (profileStatus) profileStatus.textContent = "Loading your stories...";
-  const authorName = await resolveAuthorName();
-  try {
-    const posts = await fetchPosts(true);
-    const owned = posts.filter((p) => isOwnedPost(p, authorName));
-    profileStatus.textContent = owned.length ? `You have ${owned.length} post(s).` : "You haven't shared any posts yet.";
-    if (profileOwnedCount) profileOwnedCount.textContent = String(owned.length);
-    if (profileCommunityCount) profileCommunityCount.textContent = String(posts.length);
-    renderPosts(owned);
-  } catch (e) {
-    console.error("Failed to load profile posts:", e);
-    profileStatus.textContent = "Error loading posts. Please refresh.";
-    showToast("Failed to load posts: " + (e.message || e), "error");
-  } finally {
-    profilePosts?.classList.remove("loading");
-    profilePosts?.setAttribute("aria-busy", "false");
-  }
-}
+    <dialog id="profileEditDialog" class="modal">
+      <div class="modal-header">
+        <h3>Edit post</h3>
+        <button class="icon-btn" id="closeProfileEdit">&times;</button>
+      </div>
+      <div class="form">
+        <label>Title</label>
+        <input type="text" id="profilePostTitle" placeholder="Post title" />
+        <label>Cover Images (optional, up to 10)</label>
+        <input type="file" id="profileImageInput" accept="image/*" multiple />
+        <div id="profileImagePreview" class="media-preview"></div>
+        <div class="toolbar" id="profileToolbar">
+          <button data-cmd="undo" type="button">Undo</button>
+          <button data-cmd="redo" type="button">Redo</button>
+          <button data-cmd="bold" type="button">Bold</button>
+          <button data-cmd="italic" type="button">Italic</button>
+          <button data-cmd="underline" type="button">Underline</button>
+          <select data-cmd="fontName">
+            <option value="">Font</option>
+            <option value="Sora">Sora</option>
+            <option value="Manrope">Manrope</option>
+            <option value="Georgia">Georgia</option>
+            <option value="Times New Roman">Times New Roman</option>
+            <option value="Arial">Arial</option>
+          </select>
+          <button data-cmd="formatBlock" data-value="h2" type="button">H2</button>
+          <button data-cmd="formatBlock" data-value="h3" type="button">H3</button>
+          <button data-cmd="formatBlock" data-value="p" type="button">Body</button>
+          <button data-cmd="insertUnorderedList" type="button">Bullets</button>
+          <button data-cmd="insertOrderedList" type="button">Numbered</button>
+          <button data-cmd="formatBlock" data-value="blockquote" type="button">Quote</button>
+          <button data-cmd="justifyLeft" type="button">Left</button>
+          <button data-cmd="justifyCenter" type="button">Center</button>
+          <button data-cmd="justifyRight" type="button">Right</button>
+          <button data-cmd="createLink" type="button">Link</button>
+          <button data-cmd="insertHorizontalRule" type="button">Line</button>
+          <button data-cmd="removeFormat" type="button">Clear</button>
+        </div>
+        <div id="profileEditor" class="editor" contenteditable="true"></div>
+        <button id="profileSaveBtn" class="solid full">Save changes</button>
+      </div>
+    </dialog>
 
-async function loadLandmarkSummary() {
-  try {
-    const landmarks = await fetchLandmarks(true);
-    if (profileLandmarkCount) profileLandmarkCount.textContent = String(landmarks.length);
-  } catch (e) {
-    console.warn("Failed to load landmark count:", e);
-  }
-}
-
-// Handle both edit and delete button clicks
-profilePosts?.addEventListener("click", async (e) => {
-  const btn = e.target.closest("[data-action]");
-  if (!btn) return;
-  
-  const action = btn.dataset.action;
-  const id = btn.dataset.id;
-  
-  if (action === "edit") {
-    loadEditById(id);
-  } else if (action === "delete") {
-    await handleDeletePost(id, btn);
-  }
-});
-
-async function handleDeletePost(id, btn) {
-  if (!confirm("Are you sure you want to delete this post? This action cannot be undone.")) {
-    return;
-  }
-  
-  // Disable button during operation
-  btn.disabled = true;
-  btn.textContent = "Deleting...";
-  
-  try {
-    await deletePost(id);
-    showToast("Post deleted successfully.", "success");
-    // Reload posts to reflect deletion
-    await loadProfilePosts();
-  } catch (e) {
-    console.error("Delete failed:", e);
-    showToast("Delete failed: " + (e.message || e), "error");
-    btn.disabled = false;
-    btn.textContent = "Delete";
-  }
-}
-
-async function loadEditById(id) {
-  try {
-    const posts = await fetchPosts(true);
-    const target = posts.find((p) => p.id === id);
-    if (!target) {
-      showToast("Post not found.", "warn");
-      return;
-    }
-    currentEditPost = target;
-    currentMedia = Array.isArray(target.media) ? target.media : target.coverUrl ? [target.coverUrl] : [];
-    profilePostTitle.value = target.title || "";
-    profileEditor.innerHTML = target.content || "";
-    profileImageInput.value = "";
-    showExistingMedia(currentMedia);
-    editDialog.showModal();
-  } catch (e) {
-    console.error("Failed to load post for editing:", e);
-    showToast("Failed to load post: " + (e.message || e), "error");
-  }
-}
-
-profileImageInput?.addEventListener("change", () => {
-  const files = Array.from(profileImageInput.files || []).slice(0, MAX_IMAGES_PER_POST);
-  if (files.length > MAX_IMAGES_PER_POST) {
-    showToast(`You can upload up to ${MAX_IMAGES_PER_POST} images.`, "warn");
-  }
-  profileImagePreview.innerHTML = "";
-  files.forEach((file) => {
-    const url = URL.createObjectURL(file);
-    const tile = document.createElement("div");
-    tile.className = "preview-tile";
-    tile.innerHTML = `<img src="${url}" alt="${file.name}" loading="lazy" />`;
-    profileImagePreview.appendChild(tile);
-    enhancePreviewImage(tile.querySelector("img"));
-  });
-});
-
-profileSaveBtn?.addEventListener("click", async () => {
-  if (saving || !currentEditPost) return;
-  const title = profilePostTitle.value.trim();
-  const content = normalizeContent(profileEditor.innerHTML.trim());
-  if (!title || !content) {
-    showToast("Title and content are required.", "warn");
-    return;
-  }
-
-  saving = true;
-  profileSaveBtn.textContent = "Saving...";
-  profileSaveBtn.disabled = true;
-
-  let media = currentMedia;
-  const selected = Array.from(profileImageInput.files || []).slice(0, MAX_IMAGES_PER_POST);
-  if (selected.length) {
-    try {
-      media = await uploadImages(selected);
-    } catch (e) {
-      console.error("Image upload failed:", e);
-      showToast("Image upload failed. Keeping existing images.", "warn");
-      media = currentMedia;
-    }
-  }
-
-  try {
-    const authorName = await resolveAuthorName();
-    await savePost({
-      id: currentEditPost.id,
-      title,
-      content,
-      media,
-      author: authorName,
-      authorId: currentUser.uid,
-    });
-    showToast("Post updated successfully.", "success");
-    editDialog.close();
-    await loadProfilePosts();
-  } catch (e) {
-    console.error("Update failed:", e);
-    showToast("Update failed: " + (e.message || e), "error");
-  } finally {
-    saving = false;
-    profileSaveBtn.textContent = "Save changes";
-    profileSaveBtn.disabled = false;
-  }
-});
-
-closeEdit?.addEventListener("click", () => editDialog.close());
-
-logoutBtn?.addEventListener("click", async () => {
-  try {
-    await logout();
-    window.location.href = "index.html";
-  } catch (e) {
-    console.error("Logout failed:", e);
-    showToast("Logout failed: " + (e.message || e), "error");
-  }
-});
-
-mobileLogoutBtn?.addEventListener("click", async () => {
-  try {
-    await logout();
-    window.location.href = "index.html";
-  } catch (e) {
-    console.error("Logout failed:", e);
-    showToast("Logout failed: " + (e.message || e), "error");
-  }
-});
-
-async function triggerPasswordReset() {
-  if (!changePassDialog) return;
-  currentPassword.value = "";
-  newPassword.value = "";
-  confirmPassword.value = "";
-  changePassDialog.showModal();
-}
-
-changePassBtn?.addEventListener("click", triggerPasswordReset);
-mobileChangePassBtn?.addEventListener("click", () => {
-  triggerPasswordReset();
-  mobileMenu?.classList.remove("open");
-  menuToggle?.setAttribute("aria-expanded", "false");
-});
-
-closeChangePass?.addEventListener("click", () => changePassDialog.close());
-
-changePassForm?.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const current = currentPassword.value.trim();
-  const next = newPassword.value.trim();
-  const confirm = confirmPassword.value.trim();
-  if (!current || !next || !confirm) {
-    showToast("Please fill in all password fields.", "warn");
-    return;
-  }
-  if (next.length < 6) {
-    showToast("New password must be at least 6 characters.", "warn");
-    return;
-  }
-  if (next !== confirm) {
-    showToast("New passwords do not match.", "warn");
-    return;
-  }
-  try {
-    await changePassword({ currentPassword: current, newPassword: next });
-    showToast("Password updated successfully.", "success");
-    changePassDialog.close();
-  } catch (err) {
-    console.error("Password change failed:", err);
-    showToast("Current password is incorrect.", "error");
-  }
-});
-
-themeToggle?.addEventListener("click", () => {
-  const current = document.documentElement.dataset.theme === "light" ? "light" : "dark";
-  applyTheme(current === "light" ? "dark" : "light");
-});
-
-mobileThemeToggle?.addEventListener("click", () => {
-  themeToggle?.click();
-  mobileMenu?.classList.remove("open");
-  menuToggle?.setAttribute("aria-expanded", "false");
-});
-
-menuToggle?.addEventListener("click", () => {
-  const isOpen = mobileMenu?.classList.toggle("open");
-  menuToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
-});
-
-observeAuth(async (user) => {
-  currentUser = user || null;
-  const adminPanel = document.getElementById("adminPanel");
-  if (!currentUser) {
-    profileStatus.textContent = "Please log in to view your profile.";
-    renderProfileIdentity({ username: "--", email: "--" });
-    renderWorkspaceSummary({ role: "Guest", ownedCount: 0, communityCount: 0, landmarkCount: 0, admin: false });
-    profileEmpty?.classList.remove("hidden");
-    profilePosts.innerHTML = "";
-    adminPanel?.classList.add("hidden");
-    return;
-  }
-  
-  try {
-    const profile = await getUserProfile(currentUser.uid);
-    const username =
-      profile?.username ||
-      currentUser.displayName ||
-      (currentUser.email ? currentUser.email.split("@")[0] : "Contributor");
-    const email = profile?.email || currentUser.email || "--";
-    cachedAuthorName = username;
-    renderProfileIdentity({ username, email });
-  } catch (e) {
-    console.warn("Failed to load profile, using fallback:", e);
-    const fallbackName = currentUser.email ? currentUser.email.split("@")[0] : "Contributor";
-    cachedAuthorName = fallbackName;
-    renderProfileIdentity({ username: fallbackName, email: currentUser.email || "--" });
-  }
-
-  const adminUser = isAdmin(currentUser);
-  renderWorkspaceSummary({
-    role: adminUser ? "Administrator" : "Member",
-    admin: adminUser,
-  });
-
-  if (adminUser) {
-    adminPanel?.classList.remove("hidden");
-    await initAdmin(currentUser);
-  } else {
-    adminPanel?.classList.add("hidden");
-  }
-  
-  await Promise.all([
-    loadProfilePosts(),
-    loadLandmarkSummary(),
-  ]);
-});
-
-window.addEventListener("posts-updated", () => {
-  if (currentUser) loadProfilePosts();
-});
-
-window.addEventListener("landmarks-updated", () => {
-  if (currentUser) loadLandmarkSummary();
-});
-
-initTheme();
-bindToolbar(profileEditor, profileToolbar);
-registerServiceWorker();
+    <script src="/api/runtime-config.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+    <script type="module" src="./profile.js"></script>
+  </body>
+</html>
