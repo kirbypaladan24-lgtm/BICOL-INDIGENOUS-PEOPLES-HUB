@@ -5,7 +5,9 @@ import { registerServiceWorker } from "./pwa.js";
 
 const THEME_KEY = "bicol-ip-theme";
 
-const themeToggle = document.getElementById("themeToggle");
+const menuToggle = document.getElementById("menuToggle");
+const mobileMenu = document.getElementById("mobileMenu");
+const themeToggles = Array.from(document.querySelectorAll("#themeToggle, #mobileThemeToggle"));
 
 function applyTheme(theme) {
   const value = theme === "light" ? "light" : "dark";
@@ -23,9 +25,27 @@ function initTheme() {
   applyTheme(prefersLight ? "light" : "dark");
 }
 
-themeToggle?.addEventListener("click", () => {
-  const current = document.documentElement.dataset.theme === "light" ? "light" : "dark";
-  applyTheme(current === "light" ? "dark" : "light");
+themeToggles.forEach((toggle) => {
+  toggle.addEventListener("click", () => {
+    const current = document.documentElement.dataset.theme === "light" ? "light" : "dark";
+    applyTheme(current === "light" ? "dark" : "light");
+    if (toggle.id === "mobileThemeToggle") {
+      mobileMenu?.classList.remove("open");
+      menuToggle?.setAttribute("aria-expanded", "false");
+    }
+  });
+});
+
+menuToggle?.addEventListener("click", () => {
+  const isOpen = mobileMenu?.classList.toggle("open");
+  menuToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+});
+
+mobileMenu?.querySelectorAll("a").forEach((link) => {
+  link.addEventListener("click", () => {
+    mobileMenu.classList.remove("open");
+    menuToggle?.setAttribute("aria-expanded", "false");
+  });
 });
 
 function getLandmarkId() {
