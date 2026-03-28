@@ -358,7 +358,7 @@ const translations = {
     login: "Mag-login",
     logout: "Mag-logout",
     hero_eyebrow: "Mga Katutubo | Rehiyon nin Bicol",
-    hero_title: "Iselebrar, tunawan, asin bantayan an sari-sarong kultura sa bilog na Bicol.",
+    hero_title: "Iselebrar, tunawan, asin bantayan an manlaen-laen na kultura sa bilog na Bicol.",
     hero_lede: "Maugmang pag-abot sa Bicol Indigenous Peoples Hub. Ini sarong espasyo para sa komunidad, sa pamana, asin sa buhay na kaalamang katutubo sa Bicol.",
     btn_explore_posts: "Hilingon an mga Post",
     btn_view_map: "Hilingon an Mapa",
