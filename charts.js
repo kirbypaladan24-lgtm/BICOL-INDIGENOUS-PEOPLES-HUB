@@ -502,8 +502,13 @@ function renderTopPosts(container, posts = []) {
       const dislikes = Math.max(0, Number(post.dislikes || 0));
       const engagement = likes + dislikes;
       const published = getDateValue(post, ["createdAt", "updatedAt"]);
+      const postLink = post?.id ? `index.html?post=${encodeURIComponent(post.id)}#posts` : "";
+      const wrapperTag = postLink ? "a" : "article";
+      const wrapperAttrs = postLink
+        ? `class="admin-top-post admin-top-post-link" href="${postLink}" aria-label="${escapeHtml(post.title || t("untitled_post"))}"`
+        : `class="admin-top-post"`;
       return `
-        <article class="admin-top-post">
+        <${wrapperTag} ${wrapperAttrs}>
           <div class="admin-top-post-rank">${index + 1}</div>
           <div class="admin-top-post-main">
             <div class="admin-top-post-head">
@@ -517,7 +522,7 @@ function renderTopPosts(container, posts = []) {
               <span>${published ? escapeHtml(published.toLocaleDateString()) : "--"}</span>
             </div>
           </div>
-        </article>
+        </${wrapperTag}>
       `;
     })
     .join("");
