@@ -12,6 +12,7 @@ import {
   fetchSharedLocation,
   acknowledgeLocationConsent,
   saveCurrentUserSharedLocation,
+  submitEmergencyReport,
 } from "./auth.js";
 import { uploadImages } from "./imgbb.js";
 import { initI18n, t } from "./i18n.js";
@@ -48,10 +49,14 @@ const mobileTrackerLink = document.getElementById("mobileTrackerLink");
 const trackerQuickAction = document.getElementById("trackerQuickAction");
 const trackerActionLink = document.getElementById("trackerActionLink");
 const shareLocationQuickAction = document.getElementById("shareLocationQuickAction");
+const emergencyQuickAction = document.getElementById("emergencyQuickAction");
 const shareLocationBtn = document.getElementById("shareLocationBtn");
+const emergencyBtn = document.getElementById("emergencyBtn");
 const locationShareStatus = document.getElementById("locationShareStatus");
 const locationUpdatedAt = document.getElementById("locationUpdatedAt");
 const locationAccuracy = document.getElementById("locationAccuracy");
+const emergencyStatus = document.getElementById("emergencyStatus");
+const emergencyResponseText = document.getElementById("emergencyResponseText");
 
 const editDialog = document.getElementById("profileEditDialog");
 const closeEdit = document.getElementById("closeProfileEdit");
@@ -71,6 +76,13 @@ const locationConsentDialog = document.getElementById("locationConsentDialog");
 const closeLocationConsent = document.getElementById("closeLocationConsent");
 const locationConsentDecline = document.getElementById("locationConsentDecline");
 const locationConsentAgree = document.getElementById("locationConsentAgree");
+const emergencyDialog = document.getElementById("emergencyDialog");
+const closeEmergencyDialog = document.getElementById("closeEmergencyDialog");
+const cancelEmergencyBtn = document.getElementById("cancelEmergencyBtn");
+const sendEmergencyBtn = document.getElementById("sendEmergencyBtn");
+const emergencyMessage = document.getElementById("emergencyMessage");
+const emergencyImageInput = document.getElementById("emergencyImageInput");
+const emergencyImagePreview = document.getElementById("emergencyImagePreview");
 
 const THEME_KEY = "bicol-ip-theme";
 const MAX_IMAGES_PER_POST = 10;
@@ -82,6 +94,7 @@ let currentMedia = [];
 let saving = false;
 let locationBusy = false;
 let currentLocationRecord = null;
+let emergencyBusy = false;
 
 function enhancePreviewImage(imgEl) {
   if (!imgEl) return;
@@ -162,11 +175,19 @@ function renderLocationShareState(record = currentLocationRecord) {
   const hasLocation = hasSharedCoordinates(record);
   const updatedText = formatTimestamp(record?.updatedAt);
   const accuracyValue = Number.isFinite(record?.accuracy) ? Math.round(record.accuracy) : null;
+  const responseStatus = record?.responseStatus || null;
+  const responseReason = String(record?.responseReason || "").trim();
+  const emergencyActive = record?.emergencyActive === true;
   const buttonLabel = locationBusy
     ? "Getting your location..."
     : hasLocation
       ? "Update Shared Location"
       : "Share My Location";
+  const emergencyLabel = emergencyBusy
+    ? "Sending alert..."
+    : emergencyActive
+      ? "Update Emergency Alert"
+      : "Emergency Alert";
 
   if (shareLocationBtn) {
     shareLocationBtn.textContent = buttonLabel;
@@ -178,10 +199,22 @@ function renderLocationShareState(record = currentLocationRecord) {
     shareLocationQuickAction.disabled = !currentUser || locationBusy;
   }
 
+  if (emergencyBtn) {
+    emergencyBtn.textContent = emergencyLabel;
+    emergencyBtn.disabled = !currentUser || !hasLocation || emergencyBusy;
+  }
+
+  if (emergencyQuickAction) {
+    emergencyQuickAction.textContent = emergencyLabel;
+    emergencyQuickAction.disabled = !currentUser || !hasLocation || emergencyBusy;
+  }
+
   if (!currentUser) {
     if (locationShareStatus) locationShareStatus.textContent = "Log in to share your location.";
     if (locationUpdatedAt) locationUpdatedAt.textContent = "Waiting for your first shared location";
     if (locationAccuracy) locationAccuracy.textContent = "No location synced yet";
+    if (emergencyStatus) emergencyStatus.textContent = "Log in first";
+    if (emergencyResponseText) emergencyResponseText.textContent = "Share your location first, then you can send an emergency alert with image proof if something urgent happens.";
     return;
   }
 
@@ -201,6 +234,38 @@ function renderLocationShareState(record = currentLocationRecord) {
     locationAccuracy.textContent = accuracyValue != null
       ? `Accuracy about ${accuracyValue} meters`
       : "No location synced yet";
+  }
+
+  if (emergencyStatus) {
+    if (!hasLocation) {
+      emergencyStatus.textContent = "Share location first";
+    } else if (record?.emergencyStatus === "pending") {
+      emergencyStatus.textContent = "Pending admin review";
+    } else if (responseStatus === "approved") {
+      emergencyStatus.textContent = "Approved";
+    } else if (responseStatus === "help_on_the_way") {
+      emergencyStatus.textContent = "Help is on the way";
+    } else if (responseStatus === "declined") {
+      emergencyStatus.textContent = "Declined";
+    } else {
+      emergencyStatus.textContent = "No alert sent";
+    }
+  }
+
+  if (emergencyResponseText) {
+    if (!hasLocation) {
+      emergencyResponseText.textContent = "Share your location first, then you can send an emergency alert with image proof if something urgent happens.";
+    } else if (record?.emergencyStatus === "pending" && !responseStatus) {
+      emergencyResponseText.textContent = "Your latest emergency report is waiting for an admin response.";
+    } else if (responseStatus === "approved") {
+      emergencyResponseText.textContent = responseReason || "Your emergency report was approved by the admin.";
+    } else if (responseStatus === "help_on_the_way") {
+      emergencyResponseText.textContent = responseReason || "Help is on the way according to the admin response.";
+    } else if (responseStatus === "declined") {
+      emergencyResponseText.textContent = responseReason || "Your emergency report was declined by the admin.";
+    } else {
+      emergencyResponseText.textContent = "If there is an emergency in your area, send a clear message with image proof so the admin can review it quickly.";
+    }
   }
 }
 
@@ -271,6 +336,20 @@ function requestLocationShare() {
   }
 
   syncSharedLocation();
+}
+
+function openEmergencyDialog() {
+  if (!currentUser) {
+    showToast("Please log in first before sending an emergency alert.", "warn");
+    return;
+  }
+
+  if (!hasSharedCoordinates(currentLocationRecord)) {
+    showToast("Share your current location first before sending an emergency alert.", "warn");
+    return;
+  }
+
+  emergencyDialog?.showModal();
 }
 
 function applyTheme(theme) {
@@ -689,6 +768,8 @@ mobileThemeToggle?.addEventListener("click", () => {
 
 shareLocationBtn?.addEventListener("click", requestLocationShare);
 shareLocationQuickAction?.addEventListener("click", requestLocationShare);
+emergencyBtn?.addEventListener("click", openEmergencyDialog);
+emergencyQuickAction?.addEventListener("click", openEmergencyDialog);
 closeLocationConsent?.addEventListener("click", () => locationConsentDialog?.close());
 locationConsentDecline?.addEventListener("click", () => locationConsentDialog?.close());
 locationConsentAgree?.addEventListener("click", async () => {
@@ -710,6 +791,74 @@ locationConsentAgree?.addEventListener("click", async () => {
     showToast(error?.message || "Could not save your location agreement.", "error");
   } finally {
     locationConsentAgree.disabled = false;
+  }
+});
+
+function resetEmergencyDialog() {
+  if (emergencyMessage) emergencyMessage.value = "";
+  if (emergencyImageInput) emergencyImageInput.value = "";
+  if (emergencyImagePreview) emergencyImagePreview.innerHTML = "";
+}
+
+closeEmergencyDialog?.addEventListener("click", () => emergencyDialog?.close());
+cancelEmergencyBtn?.addEventListener("click", () => emergencyDialog?.close());
+emergencyDialog?.addEventListener("close", resetEmergencyDialog);
+
+emergencyImageInput?.addEventListener("change", () => {
+  const file = emergencyImageInput.files?.[0];
+  emergencyImagePreview.innerHTML = "";
+  if (!file) return;
+
+  const url = URL.createObjectURL(file);
+  const tile = document.createElement("div");
+  tile.className = "preview-tile";
+  tile.innerHTML = `<img src="${url}" alt="${file.name}" loading="lazy" />`;
+  emergencyImagePreview.appendChild(tile);
+  enhancePreviewImage(tile.querySelector("img"));
+});
+
+sendEmergencyBtn?.addEventListener("click", async () => {
+  if (!currentUser || emergencyBusy) return;
+
+  const message = emergencyMessage?.value.trim() || "";
+  const file = emergencyImageInput?.files?.[0] || null;
+
+  if (!message) {
+    showToast("Please explain the emergency before sending.", "warn");
+    return;
+  }
+
+  if (!file) {
+    showToast("Image proof is required before sending the emergency alert.", "warn");
+    return;
+  }
+
+  emergencyBusy = true;
+  renderLocationShareState();
+  sendEmergencyBtn.disabled = true;
+
+  try {
+    const uploaded = await uploadImages([file]);
+    const imageUrl = uploaded?.[0];
+    if (!imageUrl) {
+      throw new Error("Could not upload the emergency image proof.");
+    }
+
+    currentLocationRecord = await submitEmergencyReport({
+      message,
+      imageUrl,
+    });
+
+    renderLocationShareState(currentLocationRecord);
+    emergencyDialog?.close();
+    showToast("Your emergency alert was sent to the admin tracker.", "success");
+  } catch (error) {
+    console.error("Emergency submission failed:", error);
+    showToast(error?.message || "Could not send the emergency alert.", "error");
+  } finally {
+    emergencyBusy = false;
+    sendEmergencyBtn.disabled = false;
+    renderLocationShareState();
   }
 });
 
