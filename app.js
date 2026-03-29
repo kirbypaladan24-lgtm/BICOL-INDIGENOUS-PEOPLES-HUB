@@ -44,6 +44,7 @@ const passwordInput = document.getElementById("passwordInput");
 const toggleLoginPass = document.getElementById("toggleLoginPass");
 const newPostBtn = document.getElementById("newPostBtn");
 const ctaLoginBtn = document.getElementById("ctaLoginBtn");
+const contributionCtaCard = ctaLoginBtn?.closest(".cta-card");
 const exploreBtn = document.getElementById("exploreBtn");
 const scrollMapBtn = document.getElementById("scrollMapBtn");
 const mobileMenu = document.getElementById("mobileMenu");
@@ -1357,6 +1358,7 @@ observeAuth(async (user) => {
   mobileChartsBtn?.classList.toggle("hidden", !isAdminUser);
   mobileTrackerBtn?.classList.toggle("hidden", !isAdminUser);
   newPostBtn?.classList.toggle("hidden", !authed || isAdminUser);
+  contributionCtaCard?.classList.toggle("hidden", authed);
   cachedAuthorName = null;
 
   window.__currentUser = user || null;
