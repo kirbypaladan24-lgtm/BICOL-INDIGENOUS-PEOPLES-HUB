@@ -22,6 +22,7 @@ export default defineConfig({
         profile: resolve(__dirname, 'profile.html'),
         admin: resolve(__dirname, 'admin.html'),
         charts: resolve(__dirname, 'charts.html'),
+        metricHistory: resolve(__dirname, 'metric-history.html'),
         tracker: resolve(__dirname, 'tracker.html'),
         landmark: resolve(__dirname, 'landmark.html'),
         policy: resolve(__dirname, 'policy.html')
