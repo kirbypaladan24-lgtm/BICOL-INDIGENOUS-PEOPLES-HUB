@@ -1,4 +1,18 @@
-import { observeAuth, fetchPosts, savePost, deletePost, logout, changePassword, auth, getUserProfile, isAdmin, fetchLandmarks } from "./auth.js";
+import {
+  observeAuth,
+  fetchPosts,
+  savePost,
+  deletePost,
+  logout,
+  changePassword,
+  auth,
+  getUserProfile,
+  isAdmin,
+  fetchLandmarks,
+  fetchSharedLocation,
+  acknowledgeLocationConsent,
+  saveCurrentUserSharedLocation,
+} from "./auth.js";
 import { uploadImages } from "./imgbb.js";
 import { initI18n, t } from "./i18n.js";
 import { showToast } from "./ui.js";
@@ -27,8 +41,17 @@ const profileAdminTools = document.getElementById("profileAdminTools");
 const profileWorkspaceNote = document.getElementById("profileWorkspaceNote");
 const adminToolsSidebarLink = document.getElementById("adminToolsSidebarLink");
 const chartsSidebarLink = document.getElementById("chartsSidebarLink");
+const trackerSidebarLink = document.getElementById("trackerSidebarLink");
 const mobileAdminToolsLink = document.getElementById("mobileAdminToolsLink");
 const mobileChartsLink = document.getElementById("mobileChartsLink");
+const mobileTrackerLink = document.getElementById("mobileTrackerLink");
+const trackerQuickAction = document.getElementById("trackerQuickAction");
+const trackerActionLink = document.getElementById("trackerActionLink");
+const shareLocationQuickAction = document.getElementById("shareLocationQuickAction");
+const shareLocationBtn = document.getElementById("shareLocationBtn");
+const locationShareStatus = document.getElementById("locationShareStatus");
+const locationUpdatedAt = document.getElementById("locationUpdatedAt");
+const locationAccuracy = document.getElementById("locationAccuracy");
 
 const editDialog = document.getElementById("profileEditDialog");
 const closeEdit = document.getElementById("closeProfileEdit");
@@ -44,6 +67,10 @@ const changePassForm = document.getElementById("changePassForm");
 const currentPassword = document.getElementById("currentPassword");
 const newPassword = document.getElementById("newPassword");
 const confirmPassword = document.getElementById("confirmPassword");
+const locationConsentDialog = document.getElementById("locationConsentDialog");
+const closeLocationConsent = document.getElementById("closeLocationConsent");
+const locationConsentDecline = document.getElementById("locationConsentDecline");
+const locationConsentAgree = document.getElementById("locationConsentAgree");
 
 const THEME_KEY = "bicol-ip-theme";
 const MAX_IMAGES_PER_POST = 10;
@@ -53,6 +80,8 @@ let cachedAuthorName = null;
 let currentEditPost = null;
 let currentMedia = [];
 let saving = false;
+let locationBusy = false;
+let currentLocationRecord = null;
 
 function enhancePreviewImage(imgEl) {
   if (!imgEl) return;
@@ -95,8 +124,153 @@ function renderWorkspaceSummary({ role = t("guest_role"), ownedCount = 0, commun
   }
   adminToolsSidebarLink?.classList.toggle("hidden", !admin);
   chartsSidebarLink?.classList.toggle("hidden", !admin);
+  trackerSidebarLink?.classList.toggle("hidden", !admin);
   mobileAdminToolsLink?.classList.toggle("hidden", !admin);
   mobileChartsLink?.classList.toggle("hidden", !admin);
+  mobileTrackerLink?.classList.toggle("hidden", !admin);
+  trackerQuickAction?.classList.toggle("hidden", !admin);
+  trackerActionLink?.classList.toggle("hidden", !admin);
+}
+
+function hasSharedCoordinates(record) {
+  return (
+    record?.sharingEnabled === true &&
+    Number.isFinite(record?.lat) &&
+    Number.isFinite(record?.lng)
+  );
+}
+
+function formatTimestamp(timestamp) {
+  const date =
+    timestamp?.toDate?.() ||
+    (timestamp instanceof Date ? timestamp : null);
+
+  return date
+    ? date.toLocaleString([], {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      })
+    : null;
+}
+
+function renderLocationShareState(record = currentLocationRecord) {
+  currentLocationRecord = record || null;
+  const hasConsent = Boolean(record?.consentAccepted || record?.consentAcceptedAt);
+  const hasLocation = hasSharedCoordinates(record);
+  const updatedText = formatTimestamp(record?.updatedAt);
+  const accuracyValue = Number.isFinite(record?.accuracy) ? Math.round(record.accuracy) : null;
+  const buttonLabel = locationBusy
+    ? "Getting your location..."
+    : hasLocation
+      ? "Update Shared Location"
+      : "Share My Location";
+
+  if (shareLocationBtn) {
+    shareLocationBtn.textContent = buttonLabel;
+    shareLocationBtn.disabled = !currentUser || locationBusy;
+  }
+
+  if (shareLocationQuickAction) {
+    shareLocationQuickAction.textContent = buttonLabel;
+    shareLocationQuickAction.disabled = !currentUser || locationBusy;
+  }
+
+  if (!currentUser) {
+    if (locationShareStatus) locationShareStatus.textContent = "Log in to share your location.";
+    if (locationUpdatedAt) locationUpdatedAt.textContent = "Waiting for your first shared location";
+    if (locationAccuracy) locationAccuracy.textContent = "No location synced yet";
+    return;
+  }
+
+  if (locationShareStatus) {
+    locationShareStatus.textContent = hasLocation
+      ? "Shared with the admin tracker"
+      : hasConsent
+        ? "Agreement saved. You can update your shared location anytime."
+        : "Not shared yet";
+  }
+
+  if (locationUpdatedAt) {
+    locationUpdatedAt.textContent = updatedText || "Waiting for your first shared location";
+  }
+
+  if (locationAccuracy) {
+    locationAccuracy.textContent = accuracyValue != null
+      ? `Accuracy about ${accuracyValue} meters`
+      : "No location synced yet";
+  }
+}
+
+function getLocationErrorMessage(error) {
+  switch (error?.code) {
+    case 1:
+      return "Location permission was denied for this account.";
+    case 2:
+      return "Your device could not find a location right now.";
+    case 3:
+      return "Location request timed out. Try again in a place with a better signal.";
+    default:
+      return error?.message || "Could not get your location.";
+  }
+}
+
+function getCurrentPosition() {
+  return new Promise((resolve, reject) => {
+    if (!("geolocation" in navigator)) {
+      reject(new Error("This browser does not support location sharing."));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(resolve, reject, {
+      enableHighAccuracy: true,
+      timeout: 20000,
+      maximumAge: 0,
+    });
+  });
+}
+
+async function syncSharedLocation() {
+  if (!currentUser || locationBusy) return;
+
+  locationBusy = true;
+  renderLocationShareState();
+
+  try {
+    const position = await getCurrentPosition();
+    const saved = await saveCurrentUserSharedLocation({
+      lat: position.coords.latitude,
+      lng: position.coords.longitude,
+      accuracy: position.coords.accuracy,
+    });
+
+    renderLocationShareState(saved);
+    showToast("Your latest location is now synced for the admin tracker.", "success");
+  } catch (error) {
+    console.error("Location sync failed:", error);
+    showToast(getLocationErrorMessage(error), "error");
+    renderLocationShareState();
+  } finally {
+    locationBusy = false;
+    renderLocationShareState();
+  }
+}
+
+function requestLocationShare() {
+  if (!currentUser) {
+    showToast("Please log in first before sharing your location.", "warn");
+    return;
+  }
+
+  const hasConsent = Boolean(currentLocationRecord?.consentAccepted || currentLocationRecord?.consentAcceptedAt);
+  if (!hasConsent) {
+    locationConsentDialog?.showModal();
+    return;
+  }
+
+  syncSharedLocation();
 }
 
 function applyTheme(theme) {
@@ -513,6 +687,32 @@ mobileThemeToggle?.addEventListener("click", () => {
   menuToggle?.setAttribute("aria-expanded", "false");
 });
 
+shareLocationBtn?.addEventListener("click", requestLocationShare);
+shareLocationQuickAction?.addEventListener("click", requestLocationShare);
+closeLocationConsent?.addEventListener("click", () => locationConsentDialog?.close());
+locationConsentDecline?.addEventListener("click", () => locationConsentDialog?.close());
+locationConsentAgree?.addEventListener("click", async () => {
+  if (!currentUser) {
+    locationConsentDialog?.close();
+    showToast("Please log in first before sharing your location.", "warn");
+    return;
+  }
+
+  try {
+    locationConsentAgree.disabled = true;
+    const savedConsent = await acknowledgeLocationConsent();
+    currentLocationRecord = savedConsent || currentLocationRecord;
+    locationConsentDialog?.close();
+    renderLocationShareState(savedConsent);
+    await syncSharedLocation();
+  } catch (error) {
+    console.error("Failed to save location consent:", error);
+    showToast(error?.message || "Could not save your location agreement.", "error");
+  } finally {
+    locationConsentAgree.disabled = false;
+  }
+});
+
 menuToggle?.addEventListener("click", () => {
   const isOpen = mobileMenu?.classList.toggle("open");
   menuToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
@@ -524,6 +724,7 @@ observeAuth(async (user) => {
     profileStatus.textContent = t("profile_login_required");
     renderProfileIdentity({ username: "--", email: "--" });
     renderWorkspaceSummary({ role: t("guest_role"), ownedCount: 0, communityCount: 0, landmarkCount: 0, admin: false });
+    renderLocationShareState(null);
     profileEmpty?.classList.remove("hidden");
     profilePosts.innerHTML = "";
     return;
@@ -550,7 +751,16 @@ observeAuth(async (user) => {
     role: adminUser ? t("administrator_role") : t("member_role"),
     admin: adminUser,
   });
-  
+
+  try {
+    currentLocationRecord = await fetchSharedLocation(currentUser.uid, true);
+  } catch (error) {
+    console.warn("Failed to load shared location state:", error);
+    currentLocationRecord = null;
+  }
+
+  renderLocationShareState(currentLocationRecord);
+
   await Promise.all([
     loadProfilePosts(),
     loadLandmarkSummary(),
