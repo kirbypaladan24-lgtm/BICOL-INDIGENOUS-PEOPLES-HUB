@@ -1030,6 +1030,14 @@ button {
   margin-top: 2px;
 }
 
+.location-meta-grid .workspace-meta-pill span {
+  display: none;
+}
+
+.location-meta-grid .workspace-meta-pill strong {
+  margin: 0;
+}
+
 .emergency-response-card {
   display: grid;
   gap: 14px;
