@@ -19,6 +19,7 @@ const trackerCount = document.getElementById("trackerCount");
 const trackerEmergencyCount = document.getElementById("trackerEmergencyCount");
 const trackerLastUpdated = document.getElementById("trackerLastUpdated");
 const trackerMapStatus = document.getElementById("trackerMapStatus");
+const trackerSearch = document.getElementById("trackerSearch");
 const trackerList = document.getElementById("trackerList");
 const trackerDetailSection = document.getElementById("trackerDetailSection");
 const trackerDetail = document.getElementById("trackerDetail");
@@ -49,6 +50,7 @@ let currentLocations = [];
 let selectedLocationId = null;
 let responding = false;
 let mapRetryQueued = false;
+let trackerSearchQuery = "";
 
 function applyTheme(theme) {
   const value = theme === "light" ? "light" : "dark";
@@ -123,6 +125,17 @@ function escapeHtml(value = "") {
     .replace(/'/g, "&#39;");
 }
 
+function getFilteredLocations(locations = currentLocations) {
+  const query = trackerSearchQuery.trim().toLowerCase();
+  if (!query) return locations;
+
+  return locations.filter((entry) => {
+    const username = String(entry?.username || "").toLowerCase();
+    const email = String(entry?.email || "").toLowerCase();
+    return username.includes(query) || email.includes(query);
+  });
+}
+
 function getEmergencyLabel(entry) {
   if (entry?.responseStatus === "approved") return "Approved";
   if (entry?.responseStatus === "help_on_the_way") return "Help is on the way";
@@ -137,6 +150,24 @@ function getEntryMode(entry) {
 
 function formatCoords(entry) {
   return `${Number(entry.lat).toFixed(5)}, ${Number(entry.lng).toFixed(5)}`;
+}
+
+function buildMarkerPopup(entry) {
+  const username = escapeHtml(entry.username || "--");
+  const email = escapeHtml(entry.email || "No email saved");
+  const phone = escapeHtml(entry.phone || "No phone number saved");
+  const coords = escapeHtml(formatCoords(entry));
+  const updated = escapeHtml(formatTimestamp(entry.updatedAt));
+  const status = escapeHtml(getEntryMode(entry) === "warning" ? getEmergencyLabel(entry) : "Location shared normally");
+
+  return `
+    <strong>${username}</strong><br />
+    Email: ${email}<br />
+    Phone: ${phone}<br />
+    Coordinates: ${coords}<br />
+    Updated: ${updated}<br />
+    Status: ${status}
+  `;
 }
 
 function scrollToDetails() {
@@ -214,18 +245,23 @@ function renderLocations(locations) {
   }
   if (!trackerList) return;
   currentLocations = locations;
+  const visibleLocations = getFilteredLocations(locations);
 
-  trackerCount.textContent = String(locations.length);
-  trackerEmergencyCount.textContent = String(locations.filter((entry) => entry?.emergencyActive === true).length);
-  trackerStatus.textContent = locations.length
-    ? `${locations.length} user location${locations.length === 1 ? "" : "s"} synced for the admin tracker.`
+  trackerCount.textContent = String(visibleLocations.length);
+  trackerEmergencyCount.textContent = String(visibleLocations.filter((entry) => entry?.emergencyActive === true).length);
+  trackerStatus.textContent = visibleLocations.length
+    ? trackerSearchQuery.trim()
+      ? `Showing ${visibleLocations.length} of ${locations.length} tracked user location${locations.length === 1 ? "" : "s"}.`
+      : `${visibleLocations.length} user location${visibleLocations.length === 1 ? "" : "s"} synced for the admin tracker.`
     : "No user has shared a location yet.";
-  trackerMapStatus.textContent = locations.some((entry) => entry?.emergencyActive === true)
+  trackerMapStatus.textContent = visibleLocations.some((entry) => entry?.emergencyActive === true)
     ? "Warning markers are active"
-    : locations.length
+    : visibleLocations.length
       ? "Showing synced user markers"
-      : "Waiting for user shares";
-  trackerLastUpdated.textContent = locations.length ? formatTimestamp(locations[0]?.updatedAt) : "--";
+      : trackerSearchQuery.trim()
+        ? "No matching users found"
+        : "Waiting for user shares";
+  trackerLastUpdated.textContent = visibleLocations.length ? formatTimestamp(visibleLocations[0]?.updatedAt) : "--";
 
   trackerList.innerHTML = "";
 
@@ -233,21 +269,24 @@ function renderLocations(locations) {
     markersLayer.clearLayers();
   }
 
-  if (!locations.length) {
-    trackerList.innerHTML = '<div class="tracker-empty">No user locations have been shared yet.</div>';
+  if (!visibleLocations.length) {
+    trackerList.innerHTML = `<div class="tracker-empty">${
+      trackerSearchQuery.trim()
+        ? "No tracked user matched that username or email."
+        : "No user locations have been shared yet."
+    }</div>`;
     map?.setView(BICOL_CENTER, 7);
     renderDetail(null);
     return;
   }
-  if (!locations.some((entry) => entry.id === selectedLocationId)) {
+  if (!visibleLocations.some((entry) => entry.id === selectedLocationId)) {
     selectedLocationId = null;
   }
 
   const bounds = [];
 
-  locations.forEach((entry) => {
+  visibleLocations.forEach((entry) => {
     const username = entry.username || entry.email || "Unknown user";
-    const email = entry.email || "No email saved";
     const updated = formatTimestamp(entry.updatedAt);
     const emergencyLabel = getEmergencyLabel(entry);
     const isWarning = getEntryMode(entry) === "warning";
@@ -279,6 +318,17 @@ function renderLocations(locations) {
 
     if (markersLayer) {
       const marker = L.marker([entry.lat, entry.lng], createMarkerIcon(entry) ? { icon: createMarkerIcon(entry) } : undefined);
+      marker.bindTooltip(escapeHtml(entry.email || entry.username || "Tracked user"), {
+        permanent: true,
+        direction: "top",
+        offset: [0, -18],
+        className: `tracker-email-label${isWarning ? " is-warning" : ""}`,
+      });
+      marker.bindPopup(buildMarkerPopup(entry), {
+        maxWidth: 260,
+      });
+      marker.on("mouseover", () => marker.openPopup());
+      marker.on("mouseout", () => marker.closePopup());
       marker.on("click", () => setSelectedLocation(entry.id, { scrollToDetail: isWarning }));
       markersLayer.addLayer(marker);
     }
@@ -286,7 +336,7 @@ function renderLocations(locations) {
     bounds.push([entry.lat, entry.lng]);
   });
 
-  renderDetail(selectedLocationId ? locations.find((entry) => entry.id === selectedLocationId) || null : null);
+  renderDetail(selectedLocationId ? visibleLocations.find((entry) => entry.id === selectedLocationId) || null : null);
 
   if (bounds.length === 1) {
     map?.setView(bounds[0], 13);
@@ -367,6 +417,10 @@ approveEmergencyBtn?.addEventListener("click", () => handleEmergencyResponse("ap
 helpEmergencyBtn?.addEventListener("click", () => handleEmergencyResponse("help_on_the_way"));
 declineEmergencyBtn?.addEventListener("click", () => handleEmergencyResponse("declined"));
 closeTrackerDetail?.addEventListener("click", () => setSelectedLocation(null));
+trackerSearch?.addEventListener("input", () => {
+  trackerSearchQuery = trackerSearch.value || "";
+  renderLocations(currentLocations);
+});
 
 observeAuth((user) => {
   if (!user) {
