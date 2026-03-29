@@ -1060,6 +1060,11 @@ button {
   gap: 16px;
 }
 
+.tracker-detail-card {
+  display: grid;
+  gap: 18px;
+}
+
 .tracker-list {
   display: grid;
   gap: 12px;
@@ -1073,6 +1078,18 @@ button {
   border: 1px solid rgba(255, 255, 255, 0.06);
   background:
     linear-gradient(160deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)),
+    rgba(255, 255, 255, 0.02);
+}
+
+.tracker-item.is-selected {
+  border-color: rgba(90, 154, 106, 0.45);
+  box-shadow: 0 0 0 1px rgba(90, 154, 106, 0.22), var(--shadow);
+}
+
+.tracker-item.is-warning {
+  border-color: rgba(196, 83, 68, 0.36);
+  background:
+    linear-gradient(160deg, rgba(196, 83, 68, 0.12), rgba(255, 255, 255, 0.02)),
     rgba(255, 255, 255, 0.02);
 }
 
@@ -1112,6 +1129,60 @@ button {
   background: rgba(255, 255, 255, 0.02);
 }
 
+.tracker-detail {
+  display: grid;
+  gap: 16px;
+}
+
+.tracker-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.85fr);
+  gap: 18px;
+}
+
+.tracker-detail-copy,
+.tracker-detail-proof {
+  display: grid;
+  gap: 10px;
+}
+
+.tracker-detail-copy p {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.tracker-detail-proof img {
+  width: 100%;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  object-fit: cover;
+  max-height: 320px;
+}
+
+.tracker-response-form {
+  display: grid;
+  gap: 12px;
+}
+
+.tracker-warning-pin {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #c45344;
+  color: #fff;
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  font-weight: 800;
+  box-shadow: 0 8px 18px rgba(196, 83, 68, 0.34);
+}
+
+.tracker-warning-icon {
+  background: transparent;
+  border: 0;
+}
+
 .profile-posts-section {
   display: grid;
   gap: 12px;
@@ -1135,6 +1206,11 @@ button {
   background: #ffffff;
   border-color: #d8dfd2;
   color: #1b1f1a;
+}
+
+[data-theme="light"] .tracker-item.is-warning {
+  background: rgba(196, 83, 68, 0.08);
+  border-color: rgba(196, 83, 68, 0.24);
 }
 
 .map {
@@ -3531,6 +3607,9 @@ textarea#landmarkSummary {
   .profile-summary-grid,
   .workspace-meta,
   .tracker-layout {
+    grid-template-columns: 1fr;
+  }
+  .tracker-detail-grid {
     grid-template-columns: 1fr;
   }
   .admin-bar,
