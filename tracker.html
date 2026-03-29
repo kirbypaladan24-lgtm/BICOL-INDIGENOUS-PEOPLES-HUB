@@ -149,6 +149,20 @@
               />
             </div>
           </div>
+          <div class="tracker-route-shell">
+            <article class="tracker-route-pill">
+              <span>Admin Location</span>
+              <strong id="trackerAdminLocationStatus">Finding your current location...</strong>
+            </article>
+            <article class="tracker-route-pill">
+              <span>Nearest Emergency</span>
+              <strong id="trackerNearestEmergency">No active emergency alerts</strong>
+            </article>
+            <article class="tracker-route-pill">
+              <span>Guide Route</span>
+              <strong id="trackerGuideStatus">Select a shared location to draw a guide line</strong>
+            </article>
+          </div>
           <div id="trackerMap" class="map admin-map" aria-label="User locations map"></div>
         </article>
 
@@ -191,6 +205,7 @@
               <p><strong>Coordinates:</strong> <span id="detailCoords">--</span></p>
               <p><strong>Location Updated:</strong> <span id="detailUpdated">--</span></p>
               <p><strong>Emergency Status:</strong> <span id="detailEmergencyStatus">No alert</span></p>
+              <p><strong>Guide Distance:</strong> <span id="detailGuideDistance">Select a location to estimate distance from the admin marker.</span></p>
             </div>
             <div class="tracker-detail-proof">
               <img id="detailProofImage" class="hidden" alt="Emergency proof" />
