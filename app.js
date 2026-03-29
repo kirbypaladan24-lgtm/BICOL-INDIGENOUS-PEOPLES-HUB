@@ -32,6 +32,7 @@ const logoutBtn = document.getElementById("logoutBtn");
 const profileBtn = document.getElementById("profileBtn");
 const adminToolsBtn = document.getElementById("adminToolsBtn");
 const chartsBtn = document.getElementById("chartsBtn");
+const trackerBtn = document.getElementById("trackerBtn");
 const changePassBtn = document.getElementById("changePassBtn");
 const themeToggle = document.getElementById("themeToggle");
 const menuToggle = document.getElementById("menuToggle");
@@ -51,6 +52,7 @@ const mobileLogoutBtn = document.getElementById("mobileLogoutBtn");
 const mobileProfileBtn = document.getElementById("mobileProfileBtn");
 const mobileAdminToolsBtn = document.getElementById("mobileAdminToolsBtn");
 const mobileChartsBtn = document.getElementById("mobileChartsBtn");
+const mobileTrackerBtn = document.getElementById("mobileTrackerBtn");
 const mobileChangePassBtn = document.getElementById("mobileChangePassBtn");
 const mobileThemeToggle = document.getElementById("mobileThemeToggle");
 const userPostDialog = document.getElementById("userPostDialog");
@@ -1350,8 +1352,10 @@ observeAuth(async (user) => {
   const isAdminUser = isAdmin(user);
   adminToolsBtn?.classList.toggle("hidden", !isAdminUser);
   chartsBtn?.classList.toggle("hidden", !isAdminUser);
+  trackerBtn?.classList.toggle("hidden", !isAdminUser);
   mobileAdminToolsBtn?.classList.toggle("hidden", !isAdminUser);
   mobileChartsBtn?.classList.toggle("hidden", !isAdminUser);
+  mobileTrackerBtn?.classList.toggle("hidden", !isAdminUser);
   newPostBtn?.classList.toggle("hidden", !authed || isAdminUser);
   cachedAuthorName = null;
 
