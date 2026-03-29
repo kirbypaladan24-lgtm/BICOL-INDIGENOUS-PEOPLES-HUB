@@ -156,7 +156,7 @@
         </article>
       </section>
 
-      <section class="admin-card tracker-detail-card" data-reveal data-reveal-delay="180">
+      <section id="trackerDetailSection" class="admin-card tracker-detail-card" data-reveal data-reveal-delay="180">
         <div class="admin-card-head">
           <div>
             <p class="admin-card-eyebrow">Emergency Details</p>
@@ -165,6 +165,7 @@
               Click a warning marker or a user card to review the report and send an admin response.
             </p>
           </div>
+          <button id="closeTrackerDetail" class="ghost hidden" type="button">Hide Details</button>
         </div>
         <div id="trackerDetailEmpty" class="tracker-empty">
           Choose a shared location to review its message, proof image, phone number, and response options.
