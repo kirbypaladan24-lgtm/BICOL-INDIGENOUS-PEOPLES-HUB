@@ -200,10 +200,15 @@ export function isAdmin(user) {
 const postsRef = collection(db, "posts");
 const landmarksRef = collection(db, "landmarks");
 const postReactionsRef = collection(db, "post_reactions");
+const sharedLocationsRef = collection(db, "shared_locations");
 const statsRef = doc(db, "stats", "public");
 
 function getReactionDocRef(uid, postId) {
   return doc(db, "post_reactions", `${uid}_${postId}`);
+}
+
+function getSharedLocationDocRef(uid) {
+  return doc(db, "shared_locations", uid);
 }
 
 async function bumpUserCount() {
@@ -284,6 +289,131 @@ export function observePosts(callback) {
       if (error.code === "permission-denied") {
         console.error("Firestore permission denied - check security rules");
       }
+    }
+  );
+}
+
+function resolveDisplayIdentity(user, profile = null) {
+  const username =
+    profile?.username ||
+    user?.displayName ||
+    (user?.email ? user.email.split("@")[0] : "Contributor");
+
+  return {
+    username,
+    email: profile?.email || user?.email || null,
+  };
+}
+
+export async function fetchSharedLocation(uid = auth.currentUser?.uid, forceServer = true) {
+  if (!uid) return null;
+
+  const locationRef = getSharedLocationDocRef(uid);
+
+  try {
+    const snap = forceServer ? await getDocFromServer(locationRef) : await getDoc(locationRef);
+    return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+  } catch (error) {
+    if (!forceServer) throw error;
+    const snap = await getDoc(locationRef);
+    return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+  }
+}
+
+export async function acknowledgeLocationConsent() {
+  const user = auth.currentUser;
+  if (!user?.uid || user.isAnonymous) {
+    throw new Error("Login required to share location.");
+  }
+
+  const [profile, existingLocation] = await Promise.all([
+    getUserProfile(user.uid).catch(() => null),
+    fetchSharedLocation(user.uid, false).catch(() => null),
+  ]);
+
+  const identity = resolveDisplayIdentity(user, profile);
+  const locationRef = getSharedLocationDocRef(user.uid);
+
+  await setDoc(
+    locationRef,
+    {
+      userId: user.uid,
+      uid: user.uid,
+      username: identity.username,
+      email: identity.email,
+      consentAccepted: true,
+      consentAcceptedAt: existingLocation?.consentAcceptedAt || serverTimestamp(),
+      sharingEnabled: existingLocation?.sharingEnabled === true,
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
+
+  return fetchSharedLocation(user.uid, false);
+}
+
+export async function saveCurrentUserSharedLocation({ lat, lng, accuracy = null }) {
+  const user = auth.currentUser;
+  if (!user?.uid || user.isAnonymous) {
+    throw new Error("Login required to share location.");
+  }
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    throw new Error("A valid latitude and longitude are required.");
+  }
+
+  const [profile, existingLocation] = await Promise.all([
+    getUserProfile(user.uid).catch(() => null),
+    fetchSharedLocation(user.uid, false).catch(() => null),
+  ]);
+
+  const identity = resolveDisplayIdentity(user, profile);
+  const normalizedAccuracy = Number.isFinite(accuracy) ? Math.round(accuracy) : null;
+
+  await setDoc(
+    getSharedLocationDocRef(user.uid),
+    {
+      userId: user.uid,
+      uid: user.uid,
+      username: identity.username,
+      email: identity.email,
+      lat,
+      lng,
+      accuracy: normalizedAccuracy,
+      consentAccepted: true,
+      consentAcceptedAt: existingLocation?.consentAcceptedAt || serverTimestamp(),
+      sharingEnabled: true,
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
+
+  return fetchSharedLocation(user.uid, false);
+}
+
+export function observeSharedLocations(callback) {
+  return onSnapshot(
+    sharedLocationsRef,
+    (snapshot) => {
+      const locations = snapshot.docs
+        .map((d) => ({ id: d.id, ...d.data() }))
+        .filter(
+          (entry) =>
+            entry?.sharingEnabled === true &&
+            Number.isFinite(entry?.lat) &&
+            Number.isFinite(entry?.lng)
+        )
+        .sort((a, b) => {
+          const aTime = a?.updatedAt?.seconds || 0;
+          const bTime = b?.updatedAt?.seconds || 0;
+          return bTime - aTime;
+        });
+
+      callback(locations);
+    },
+    (error) => {
+      console.warn("observeSharedLocations error:", error);
+      callback([]);
     }
   );
 }
