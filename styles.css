@@ -1060,6 +1060,19 @@ button {
   gap: 16px;
 }
 
+.tracker-search-shell {
+  display: grid;
+  gap: 8px;
+}
+
+.tracker-search-shell label {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 700;
+}
+
 .tracker-detail-card {
   display: grid;
   gap: 18px;
@@ -1183,6 +1196,26 @@ button {
   border: 0;
 }
 
+.tracker-email-label {
+  background: rgba(11, 18, 13, 0.9);
+  color: #f6f8f2;
+  border: 1px solid rgba(90, 154, 106, 0.28);
+  border-radius: 999px;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.tracker-email-label.is-warning {
+  border-color: rgba(196, 83, 68, 0.34);
+}
+
+.tracker-email-label::before {
+  display: none;
+}
+
 .profile-posts-section {
   display: grid;
   gap: 12px;
@@ -1211,6 +1244,12 @@ button {
 [data-theme="light"] .tracker-item.is-warning {
   background: rgba(196, 83, 68, 0.08);
   border-color: rgba(196, 83, 68, 0.24);
+}
+
+[data-theme="light"] .tracker-email-label {
+  background: #ffffff;
+  color: #1b1f1a;
+  border-color: rgba(27, 31, 26, 0.12);
 }
 
 .map {
