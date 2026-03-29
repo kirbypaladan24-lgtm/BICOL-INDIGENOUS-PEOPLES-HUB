@@ -354,6 +354,24 @@ export async function fetchSharedLocation(uid = auth.currentUser?.uid, forceServ
   }
 }
 
+export function observeSharedLocation(uid = auth.currentUser?.uid, callback) {
+  if (!uid || typeof callback !== "function") {
+    return () => {};
+  }
+
+  const locationRef = getSharedLocationDocRef(uid);
+  return onSnapshot(
+    locationRef,
+    (snapshot) => {
+      callback(snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null);
+    },
+    (error) => {
+      console.warn("observeSharedLocation error:", error);
+      callback(null);
+    }
+  );
+}
+
 export async function acknowledgeLocationConsent() {
   const user = auth.currentUser;
   if (!user?.uid || user.isAnonymous) {
