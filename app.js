@@ -925,11 +925,25 @@ async function loadLandmarksToMap() {
 
 // --- Posts/auth/UI plumbing ---
 loginBtn.addEventListener("click", () => authDialog.showModal());
-ctaLoginBtn.addEventListener("click", () => authDialog.showModal());
+ctaLoginBtn?.addEventListener("click", () => authDialog.showModal());
 closeAuth.addEventListener("click", () => authDialog.close());
 
-exploreBtn.addEventListener("click", () => document.getElementById("posts").scrollIntoView({ behavior: "smooth" }));
-scrollMapBtn?.addEventListener("click", () => document.getElementById("map").scrollIntoView({ behavior: "smooth" }));
+exploreBtn?.addEventListener("click", () => {
+  const postsSection = document.getElementById("posts");
+  if (postsSection) {
+    postsSection.scrollIntoView({ behavior: "smooth" });
+    return;
+  }
+  window.location.href = "posts.html";
+});
+scrollMapBtn?.addEventListener("click", () => {
+  const mapSection = document.getElementById("map");
+  if (mapSection) {
+    mapSection.scrollIntoView({ behavior: "smooth" });
+    return;
+  }
+  window.location.href = "index.html#map";
+});
 
 postSearchInput?.addEventListener("input", () => applyPostFilter());
 clearPostSearch?.addEventListener("click", () => {
@@ -946,9 +960,12 @@ menuToggle?.addEventListener("click", () => {
 
 document.querySelectorAll(".mobile-links a").forEach((link) =>
   link.addEventListener("click", (e) => {
-    e.preventDefault();
-    const target = document.querySelector(link.getAttribute("href"));
-    target?.scrollIntoView({ behavior: "smooth" });
+    const href = link.getAttribute("href") || "";
+    if (href.startsWith("#")) {
+      e.preventDefault();
+      const target = document.querySelector(href);
+      target?.scrollIntoView({ behavior: "smooth" });
+    }
     mobileMenu.classList.remove("open");
     menuToggle.setAttribute("aria-expanded", "false");
   })
@@ -969,8 +986,10 @@ mobileLogoutBtn?.addEventListener("click", async () => {
 
 document.querySelectorAll(".nav a").forEach((link) =>
   link.addEventListener("click", (e) => {
+    const href = link.getAttribute("href") || "";
+    if (!href.startsWith("#")) return;
     e.preventDefault();
-    const target = document.querySelector(link.getAttribute("href"));
+    const target = document.querySelector(href);
     target?.scrollIntoView({ behavior: "smooth" });
   })
 );
@@ -1333,7 +1352,7 @@ observeAuth(async (user) => {
   chartsBtn?.classList.toggle("hidden", !isAdminUser);
   mobileAdminToolsBtn?.classList.toggle("hidden", !isAdminUser);
   mobileChartsBtn?.classList.toggle("hidden", !isAdminUser);
-  newPostBtn.classList.toggle("hidden", !authed || isAdminUser);
+  newPostBtn?.classList.toggle("hidden", !authed || isAdminUser);
   cachedAuthorName = null;
 
   window.__currentUser = user || null;
@@ -1382,6 +1401,8 @@ postsUnsub = observePosts((posts) => {
   });
 });
 
-ensureLeaflet()
-  .then(initMap)
-  .catch(() => showToast(t("toast_map_library_failed"), "error"));
+if (document.getElementById("mapCanvas")) {
+  ensureLeaflet()
+    .then(initMap)
+    .catch(() => showToast(t("toast_map_library_failed"), "error"));
+}
