@@ -136,6 +136,14 @@ function getFilteredLocations(locations = currentLocations) {
   });
 }
 
+function entryMatchesSearch(entry) {
+  const query = trackerSearchQuery.trim().toLowerCase();
+  if (!query) return false;
+  const username = String(entry?.username || "").toLowerCase();
+  const email = String(entry?.email || "").toLowerCase();
+  return username.includes(query) || email.includes(query);
+}
+
 function getEmergencyLabel(entry) {
   if (entry?.responseStatus === "approved") return "Approved";
   if (entry?.responseStatus === "help_on_the_way") return "Help is on the way";
@@ -168,6 +176,17 @@ function buildMarkerPopup(entry) {
     Updated: ${updated}<br />
     Status: ${status}
   `;
+}
+
+function createSearchHighlightIcon(entry) {
+  if (!entryMatchesSearch(entry)) return null;
+  const warning = getEntryMode(entry) === "warning";
+  return L.divIcon({
+    className: `tracker-search-highlight${warning ? " is-warning" : ""}`,
+    html: '<span class="tracker-search-ring"></span>',
+    iconSize: [38, 38],
+    iconAnchor: [19, 19],
+  });
 }
 
 function scrollToDetails() {
@@ -245,23 +264,21 @@ function renderLocations(locations) {
   }
   if (!trackerList) return;
   currentLocations = locations;
-  const visibleLocations = getFilteredLocations(locations);
+  const matchedLocations = getFilteredLocations(locations);
 
-  trackerCount.textContent = String(visibleLocations.length);
-  trackerEmergencyCount.textContent = String(visibleLocations.filter((entry) => entry?.emergencyActive === true).length);
-  trackerStatus.textContent = visibleLocations.length
+  trackerCount.textContent = String(locations.length);
+  trackerEmergencyCount.textContent = String(locations.filter((entry) => entry?.emergencyActive === true).length);
+  trackerStatus.textContent = locations.length
     ? trackerSearchQuery.trim()
-      ? `Showing ${visibleLocations.length} of ${locations.length} tracked user location${locations.length === 1 ? "" : "s"}.`
-      : `${visibleLocations.length} user location${visibleLocations.length === 1 ? "" : "s"} synced for the admin tracker.`
+      ? `Highlighted ${matchedLocations.length} matching user location${matchedLocations.length === 1 ? "" : "s"} on the map.`
+      : `${locations.length} user location${locations.length === 1 ? "" : "s"} synced for the admin tracker.`
     : "No user has shared a location yet.";
-  trackerMapStatus.textContent = visibleLocations.some((entry) => entry?.emergencyActive === true)
+  trackerMapStatus.textContent = locations.some((entry) => entry?.emergencyActive === true)
     ? "Warning markers are active"
-    : visibleLocations.length
+    : locations.length
       ? "Showing synced user markers"
-      : trackerSearchQuery.trim()
-        ? "No matching users found"
-        : "Waiting for user shares";
-  trackerLastUpdated.textContent = visibleLocations.length ? formatTimestamp(visibleLocations[0]?.updatedAt) : "--";
+      : "Waiting for user shares";
+  trackerLastUpdated.textContent = locations.length ? formatTimestamp(locations[0]?.updatedAt) : "--";
 
   trackerList.innerHTML = "";
 
@@ -269,52 +286,55 @@ function renderLocations(locations) {
     markersLayer.clearLayers();
   }
 
-  if (!visibleLocations.length) {
-    trackerList.innerHTML = `<div class="tracker-empty">${
-      trackerSearchQuery.trim()
-        ? "No tracked user matched that username or email."
-        : "No user locations have been shared yet."
-    }</div>`;
+  if (!locations.length) {
+    trackerList.innerHTML = '<div class="tracker-empty">No user locations have been shared yet.</div>';
     map?.setView(BICOL_CENTER, 7);
     renderDetail(null);
     return;
   }
-  if (!visibleLocations.some((entry) => entry.id === selectedLocationId)) {
+  if (!locations.some((entry) => entry.id === selectedLocationId)) {
     selectedLocationId = null;
   }
 
   const bounds = [];
 
-  visibleLocations.forEach((entry) => {
+  if (trackerSearchQuery.trim() && !matchedLocations.length) {
+    trackerList.innerHTML = '<div class="tracker-empty">No tracked user matched that username or email.</div>';
+  }
+
+  locations.forEach((entry) => {
     const username = entry.username || entry.email || "Unknown user";
     const updated = formatTimestamp(entry.updatedAt);
     const emergencyLabel = getEmergencyLabel(entry);
     const isWarning = getEntryMode(entry) === "warning";
+    const isMatch = entryMatchesSearch(entry);
 
-    const item = document.createElement("article");
-    item.className = `tracker-item${entry.id === selectedLocationId ? " is-selected" : ""}${isWarning ? " is-warning" : ""}`;
-    item.tabIndex = 0;
-    item.innerHTML = `
-      <div class="tracker-item-head">
-        <div>
-          <h4>${escapeHtml(username)}</h4>
-          <p>${isWarning ? "Warning marker active" : "Shared location is active"}</p>
+    if (!trackerSearchQuery.trim() || isMatch) {
+      const item = document.createElement("article");
+      item.className = `tracker-item${entry.id === selectedLocationId ? " is-selected" : ""}${isWarning ? " is-warning" : ""}${isMatch ? " is-match" : ""}`;
+      item.tabIndex = 0;
+      item.innerHTML = `
+        <div class="tracker-item-head">
+          <div>
+            <h4>${escapeHtml(username)}</h4>
+            <p>${isWarning ? "Warning marker active" : "Shared location is active"}</p>
+          </div>
+          <span class="ghost small">${isWarning ? "Warning" : "View"}</span>
         </div>
-        <span class="ghost small">${isWarning ? "Warning" : "View"}</span>
-      </div>
-      <div class="tracker-item-meta">
-        <p><strong>Updated:</strong> ${escapeHtml(updated)}</p>
-        <p><strong>Status:</strong> ${escapeHtml(isWarning ? emergencyLabel : "Location shared normally")}</p>
-      </div>
-    `;
-    item.addEventListener("click", () => setSelectedLocation(entry.id, { scrollToDetail: isWarning }));
-    item.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        setSelectedLocation(entry.id, { scrollToDetail: isWarning });
-      }
-    });
-    trackerList.appendChild(item);
+        <div class="tracker-item-meta">
+          <p><strong>Updated:</strong> ${escapeHtml(updated)}</p>
+          <p><strong>Status:</strong> ${escapeHtml(isWarning ? emergencyLabel : "Location shared normally")}</p>
+        </div>
+      `;
+      item.addEventListener("click", () => setSelectedLocation(entry.id, { scrollToDetail: isWarning }));
+      item.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          setSelectedLocation(entry.id, { scrollToDetail: isWarning });
+        }
+      });
+      trackerList.appendChild(item);
+    }
 
     if (markersLayer) {
       const marker = L.marker([entry.lat, entry.lng], createMarkerIcon(entry) ? { icon: createMarkerIcon(entry) } : undefined);
@@ -322,7 +342,7 @@ function renderLocations(locations) {
         permanent: true,
         direction: "top",
         offset: [0, -18],
-        className: `tracker-email-label${isWarning ? " is-warning" : ""}`,
+        className: `tracker-email-label${isWarning ? " is-warning" : ""}${isMatch ? " is-match" : ""}`,
       });
       marker.bindPopup(buildMarkerPopup(entry), {
         maxWidth: 260,
@@ -331,12 +351,22 @@ function renderLocations(locations) {
       marker.on("mouseout", () => marker.closePopup());
       marker.on("click", () => setSelectedLocation(entry.id, { scrollToDetail: isWarning }));
       markersLayer.addLayer(marker);
+      const highlightIcon = createSearchHighlightIcon(entry);
+      if (highlightIcon) {
+        const halo = L.marker([entry.lat, entry.lng], {
+          icon: highlightIcon,
+          interactive: false,
+          keyboard: false,
+          zIndexOffset: -500,
+        });
+        markersLayer.addLayer(halo);
+      }
     }
 
     bounds.push([entry.lat, entry.lng]);
   });
 
-  renderDetail(selectedLocationId ? visibleLocations.find((entry) => entry.id === selectedLocationId) || null : null);
+  renderDetail(selectedLocationId ? locations.find((entry) => entry.id === selectedLocationId) || null : null);
 
   if (bounds.length === 1) {
     map?.setView(bounds[0], 13);
