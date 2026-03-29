@@ -1,4 +1,4 @@
-import { observeAuth, observeSharedLocations, isAdmin, logout } from "./auth.js";
+import { observeAuth, observeSharedLocations, isAdmin, logout, respondToEmergency } from "./auth.js";
 import { initI18n } from "./i18n.js";
 import { showToast } from "./ui.js";
 import { registerServiceWorker } from "./pwa.js";
@@ -16,9 +16,25 @@ const trackerUsername = document.getElementById("trackerUsername");
 const trackerEmail = document.getElementById("trackerEmail");
 const trackerRole = document.getElementById("trackerRole");
 const trackerCount = document.getElementById("trackerCount");
+const trackerEmergencyCount = document.getElementById("trackerEmergencyCount");
 const trackerLastUpdated = document.getElementById("trackerLastUpdated");
 const trackerMapStatus = document.getElementById("trackerMapStatus");
 const trackerList = document.getElementById("trackerList");
+const trackerDetail = document.getElementById("trackerDetail");
+const trackerDetailEmpty = document.getElementById("trackerDetailEmpty");
+const detailUsername = document.getElementById("detailUsername");
+const detailEmail = document.getElementById("detailEmail");
+const detailPhone = document.getElementById("detailPhone");
+const detailCoords = document.getElementById("detailCoords");
+const detailUpdated = document.getElementById("detailUpdated");
+const detailEmergencyStatus = document.getElementById("detailEmergencyStatus");
+const detailMessage = document.getElementById("detailMessage");
+const detailProofImage = document.getElementById("detailProofImage");
+const detailNoProof = document.getElementById("detailNoProof");
+const responseReason = document.getElementById("responseReason");
+const approveEmergencyBtn = document.getElementById("approveEmergencyBtn");
+const helpEmergencyBtn = document.getElementById("helpEmergencyBtn");
+const declineEmergencyBtn = document.getElementById("declineEmergencyBtn");
 
 const THEME_KEY = "bicol-ip-theme";
 const BICOL_CENTER = [13.420988, 123.413673];
@@ -26,6 +42,9 @@ const BICOL_CENTER = [13.420988, 123.413673];
 let map = null;
 let markersLayer = null;
 let unsubscribeSharedLocations = null;
+let currentLocations = [];
+let selectedLocationId = null;
+let responding = false;
 
 function applyTheme(theme) {
   const value = theme === "light" ? "light" : "dark";
@@ -75,6 +94,20 @@ function ensureMap() {
   markersLayer = L.layerGroup().addTo(map);
 }
 
+function createMarkerIcon(entry) {
+  if (entry?.emergencyActive === true) {
+    return L.divIcon({
+      className: "tracker-warning-icon",
+      html: '<span class="tracker-warning-pin">!</span>',
+      iconSize: [28, 28],
+      iconAnchor: [14, 14],
+      popupAnchor: [0, -14],
+    });
+  }
+
+  return undefined;
+}
+
 function escapeHtml(value = "") {
   return String(value)
     .replace(/&/g, "&amp;")
@@ -84,15 +117,74 @@ function escapeHtml(value = "") {
     .replace(/'/g, "&#39;");
 }
 
+function getEmergencyLabel(entry) {
+  if (entry?.responseStatus === "approved") return "Approved";
+  if (entry?.responseStatus === "help_on_the_way") return "Help is on the way";
+  if (entry?.responseStatus === "declined") return "Declined";
+  if (entry?.emergencyStatus === "pending") return "Pending admin review";
+  return "No active alert";
+}
+
+function formatCoords(entry) {
+  return `${Number(entry.lat).toFixed(5)}, ${Number(entry.lng).toFixed(5)}`;
+}
+
+function setSelectedLocation(locationId) {
+  selectedLocationId = locationId || null;
+  renderLocations(currentLocations);
+}
+
+function renderDetail(entry) {
+  if (!entry) {
+    trackerDetail?.classList.add("hidden");
+    trackerDetailEmpty?.classList.remove("hidden");
+    return;
+  }
+
+  trackerDetailEmpty?.classList.add("hidden");
+  trackerDetail?.classList.remove("hidden");
+  detailUsername.textContent = entry.username || "--";
+  detailEmail.textContent = entry.email || "No email saved";
+  detailPhone.textContent = entry.phone || "No phone number saved";
+  detailCoords.textContent = formatCoords(entry);
+  detailUpdated.textContent = formatTimestamp(entry.updatedAt);
+  detailEmergencyStatus.textContent = getEmergencyLabel(entry);
+  detailMessage.textContent = entry.emergencyMessage || "No emergency message for this location.";
+  responseReason.value = entry.responseReason || "";
+
+  if (entry.emergencyImageUrl) {
+    detailProofImage.src = entry.emergencyImageUrl;
+    detailProofImage.classList.remove("hidden");
+    detailNoProof.classList.add("hidden");
+  } else {
+    detailProofImage.removeAttribute("src");
+    detailProofImage.classList.add("hidden");
+    detailNoProof.classList.remove("hidden");
+  }
+
+  const canRespond = entry.emergencyActive === true;
+  [approveEmergencyBtn, helpEmergencyBtn, declineEmergencyBtn].forEach((btn) => {
+    if (!btn) return;
+    btn.disabled = !canRespond || responding;
+  });
+  responseReason.disabled = !canRespond || responding;
+}
+
 function renderLocations(locations) {
   ensureMap();
   if (!trackerList) return;
+  currentLocations = locations;
 
   trackerCount.textContent = String(locations.length);
+  trackerEmergencyCount.textContent = String(locations.filter((entry) => entry?.emergencyActive === true).length);
   trackerStatus.textContent = locations.length
     ? `${locations.length} user location${locations.length === 1 ? "" : "s"} synced for the admin tracker.`
     : "No user has shared a location yet.";
-  trackerMapStatus.textContent = locations.length ? "Showing synced user markers" : "Waiting for user shares";
+  trackerMapStatus.textContent = locations.some((entry) => entry?.emergencyActive === true)
+    ? "Warning markers are active"
+    : locations.length
+      ? "Showing synced user markers"
+      : "Waiting for user shares";
   trackerLastUpdated.textContent = locations.length ? formatTimestamp(locations[0]?.updatedAt) : "--";
 
   trackerList.innerHTML = "";
@@ -104,7 +196,12 @@ function renderLocations(locations) {
   if (!locations.length) {
     trackerList.innerHTML = '<div class="tracker-empty">No user locations have been shared yet.</div>';
     map?.setView(BICOL_CENTER, 7);
+    renderDetail(null);
     return;
+  }
+
+  if (!locations.some((entry) => entry.id === selectedLocationId)) {
+    selectedLocationId = locations[0]?.id || null;
   }
 
   const bounds = [];
@@ -114,38 +211,55 @@ function renderLocations(locations) {
     const email = entry.email || "No email saved";
     const updated = formatTimestamp(entry.updatedAt);
     const accuracy = Number.isFinite(entry.accuracy) ? `${Math.round(entry.accuracy)} meters` : "Not provided";
-    const coords = `${Number(entry.lat).toFixed(5)}, ${Number(entry.lng).toFixed(5)}`;
+    const coords = formatCoords(entry);
+    const emergencyLabel = getEmergencyLabel(entry);
 
     const item = document.createElement("article");
-    item.className = "tracker-item";
+    item.className = `tracker-item${entry.id === selectedLocationId ? " is-selected" : ""}${entry.emergencyActive === true ? " is-warning" : ""}`;
+    item.tabIndex = 0;
     item.innerHTML = `
       <div class="tracker-item-head">
         <div>
           <h4>${escapeHtml(username)}</h4>
           <p>${escapeHtml(email)}</p>
         </div>
-        <span class="ghost small">Live</span>
+        <span class="ghost small">${entry.emergencyActive === true ? "Warning" : "Live"}</span>
       </div>
       <div class="tracker-item-meta">
+        <p><strong>Phone:</strong> ${escapeHtml(entry.phone || "No phone number saved")}</p>
         <p><strong>Coordinates:</strong> ${coords}</p>
         <p><strong>Accuracy:</strong> ${escapeHtml(accuracy)}</p>
         <p><strong>Updated:</strong> ${escapeHtml(updated)}</p>
+        <p><strong>Emergency:</strong> ${escapeHtml(emergencyLabel)}</p>
       </div>
     `;
+    item.addEventListener("click", () => setSelectedLocation(entry.id));
+    item.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        setSelectedLocation(entry.id);
+      }
+    });
     trackerList.appendChild(item);
 
     if (markersLayer) {
-      const marker = L.marker([entry.lat, entry.lng]).bindPopup(`
+      const marker = L.marker([entry.lat, entry.lng], createMarkerIcon(entry) ? { icon: createMarkerIcon(entry) } : undefined).bindPopup(`
         <strong>${escapeHtml(username)}</strong><br />
         ${escapeHtml(email)}<br />
+        Phone: ${escapeHtml(entry.phone || "No phone number saved")}<br />
+        Emergency: ${escapeHtml(emergencyLabel)}<br />
+        ${entry.emergencyMessage ? `Message: ${escapeHtml(entry.emergencyMessage)}<br />` : ""}
         Accuracy: ${escapeHtml(accuracy)}<br />
         Updated: ${escapeHtml(updated)}
       `);
+      marker.on("click", () => setSelectedLocation(entry.id));
       markersLayer.addLayer(marker);
     }
 
     bounds.push([entry.lat, entry.lng]);
   });
+
+  renderDetail(locations.find((entry) => entry.id === selectedLocationId) || null);
 
   if (bounds.length === 1) {
     map?.setView(bounds[0], 13);
@@ -154,6 +268,40 @@ function renderLocations(locations) {
 
   if (bounds.length > 1) {
     map?.fitBounds(bounds, { padding: [28, 28] });
+  }
+}
+
+async function handleEmergencyResponse(status) {
+  const selectedEntry = currentLocations.find((entry) => entry.id === selectedLocationId);
+  if (!selectedEntry?.id || responding) return;
+
+  const reason = responseReason?.value.trim() || "";
+  if (status === "declined" && !reason) {
+    showToast("Please add a reason before declining this emergency report.", "warn");
+    return;
+  }
+
+  responding = true;
+  renderDetail(selectedEntry);
+
+  try {
+    await respondToEmergency(selectedEntry.id, { status, reason });
+    currentLocations = currentLocations.map((entry) =>
+      entry.id === selectedEntry.id
+        ? {
+            ...entry,
+            responseStatus: status,
+            responseReason: reason || null,
+          }
+        : entry
+    );
+    showToast("Emergency response sent successfully.", "success");
+  } catch (error) {
+    console.error("Failed to respond to emergency:", error);
+    showToast(error?.message || "Could not send the emergency response.", "error");
+  } finally {
+    responding = false;
+    renderLocations(currentLocations);
   }
 }
 
@@ -185,6 +333,9 @@ menuToggle?.addEventListener("click", () => {
 
 logoutBtn?.addEventListener("click", handleLogout);
 mobileLogoutBtn?.addEventListener("click", handleLogout);
+approveEmergencyBtn?.addEventListener("click", () => handleEmergencyResponse("approved"));
+helpEmergencyBtn?.addEventListener("click", () => handleEmergencyResponse("help_on_the_way"));
+declineEmergencyBtn?.addEventListener("click", () => handleEmergencyResponse("declined"));
 
 observeAuth((user) => {
   if (!user) {
