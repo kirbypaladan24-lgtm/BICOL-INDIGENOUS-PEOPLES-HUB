@@ -21,6 +21,9 @@ const trackerLastUpdated = document.getElementById("trackerLastUpdated");
 const trackerMapStatus = document.getElementById("trackerMapStatus");
 const trackerSearch = document.getElementById("trackerSearch");
 const trackerList = document.getElementById("trackerList");
+const trackerAdminLocationStatus = document.getElementById("trackerAdminLocationStatus");
+const trackerNearestEmergency = document.getElementById("trackerNearestEmergency");
+const trackerGuideStatus = document.getElementById("trackerGuideStatus");
 const trackerDetailSection = document.getElementById("trackerDetailSection");
 const trackerDetail = document.getElementById("trackerDetail");
 const trackerDetailEmpty = document.getElementById("trackerDetailEmpty");
@@ -31,6 +34,7 @@ const detailPhone = document.getElementById("detailPhone");
 const detailCoords = document.getElementById("detailCoords");
 const detailUpdated = document.getElementById("detailUpdated");
 const detailEmergencyStatus = document.getElementById("detailEmergencyStatus");
+const detailGuideDistance = document.getElementById("detailGuideDistance");
 const detailMessage = document.getElementById("detailMessage");
 const detailProofImage = document.getElementById("detailProofImage");
 const detailNoProof = document.getElementById("detailNoProof");
@@ -51,6 +55,10 @@ let selectedLocationId = null;
 let responding = false;
 let mapRetryQueued = false;
 let trackerSearchQuery = "";
+let adminLocation = null;
+let adminMarker = null;
+let guideLine = null;
+let adminGeoWatchId = null;
 
 function applyTheme(theme) {
   const value = theme === "light" ? "light" : "dark";
@@ -84,6 +92,27 @@ function formatTimestamp(timestamp) {
     : "--";
 }
 
+function haversineDistanceMeters(a, b) {
+  const toRad = (deg) => (deg * Math.PI) / 180;
+  const earthRadius = 6371000;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+  const sinLat = Math.sin(dLat / 2);
+  const sinLng = Math.sin(dLng / 2);
+  const h =
+    sinLat * sinLat +
+    Math.cos(lat1) * Math.cos(lat2) * sinLng * sinLng;
+  return 2 * earthRadius * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+}
+
+function formatDistance(meters) {
+  if (!Number.isFinite(meters)) return "--";
+  if (meters >= 1000) return `${(meters / 1000).toFixed(2)} km`;
+  return `${Math.round(meters)} m`;
+}
+
 function ensureMap() {
   if (map) return true;
   if (!window.L) return false;
@@ -100,6 +129,16 @@ function ensureMap() {
 
   markersLayer = L.layerGroup().addTo(map);
   return true;
+}
+
+function createAdminLocationIcon() {
+  return L.divIcon({
+    className: "tracker-admin-location-icon",
+    html: '<span class="tracker-admin-location-pin">A</span>',
+    iconSize: [26, 26],
+    iconAnchor: [13, 13],
+    popupAnchor: [0, -14],
+  });
 }
 
 function createMarkerIcon(entry) {
@@ -189,6 +228,175 @@ function createSearchHighlightIcon(entry) {
   });
 }
 
+function updateAdminMarker() {
+  if (!map || !adminLocation) return;
+  if (!adminMarker) {
+    adminMarker = L.marker([adminLocation.lat, adminLocation.lng], {
+      icon: createAdminLocationIcon(),
+    }).addTo(map);
+    adminMarker.bindTooltip("Admin location", {
+      permanent: true,
+      direction: "top",
+      offset: [0, -18],
+      className: "tracker-admin-label",
+    });
+  } else {
+    adminMarker.setLatLng([adminLocation.lat, adminLocation.lng]);
+  }
+  adminMarker.bindPopup(
+    `Your current admin location<br />Accuracy: ${escapeHtml(formatDistance(adminLocation.accuracy))}`,
+    { maxWidth: 220 }
+  );
+}
+
+function clearGuideLine() {
+  if (guideLine && map) {
+    try {
+      map.removeLayer(guideLine);
+    } catch (error) {}
+  }
+  guideLine = null;
+}
+
+function updateNearestEmergencyStatus(locations = currentLocations) {
+  if (!trackerNearestEmergency) return;
+  const emergencyLocations = (locations || []).filter((entry) => entry?.emergencyActive === true);
+  if (!emergencyLocations.length) {
+    trackerNearestEmergency.textContent = "No active emergency alerts";
+    return;
+  }
+  if (!adminLocation) {
+    trackerNearestEmergency.textContent = "Enable admin location to estimate nearest emergency";
+    return;
+  }
+
+  const nearest = emergencyLocations
+    .map((entry) => ({
+      entry,
+      distance: haversineDistanceMeters(adminLocation, { lat: entry.lat, lng: entry.lng }),
+    }))
+    .sort((a, b) => a.distance - b.distance)[0];
+
+  trackerNearestEmergency.textContent = `${nearest.entry.username || nearest.entry.email || "Unknown user"} · ${formatDistance(nearest.distance)}`;
+}
+
+function updateGuideLine() {
+  clearGuideLine();
+
+  if (!map) return;
+
+  const selectedEntry = currentLocations.find((entry) => entry.id === selectedLocationId);
+  if (!selectedEntry || !adminLocation) {
+    if (trackerGuideStatus) {
+      trackerGuideStatus.textContent = selectedEntry
+        ? "Admin location is needed to draw the guide line"
+        : "Select a shared location to draw a guide line";
+    }
+    if (detailGuideDistance) {
+      detailGuideDistance.textContent = selectedEntry
+        ? "Admin location is needed to estimate distance."
+        : "Select a location to estimate distance from the admin marker.";
+    }
+    return;
+  }
+
+  const distance = haversineDistanceMeters(adminLocation, { lat: selectedEntry.lat, lng: selectedEntry.lng });
+  guideLine = L.polyline(
+    [
+      [adminLocation.lat, adminLocation.lng],
+      [selectedEntry.lat, selectedEntry.lng],
+    ],
+    {
+      color: selectedEntry.emergencyActive === true ? "#c45344" : "#2b7bff",
+      weight: 4,
+      opacity: 0.9,
+      dashArray: "10 12",
+      className: "tracker-route-line",
+    }
+  ).addTo(map);
+
+  if (trackerGuideStatus) {
+    trackerGuideStatus.textContent = `Guide line active · ${formatDistance(distance)}`;
+  }
+  if (detailGuideDistance) {
+    detailGuideDistance.textContent = `${formatDistance(distance)} from the admin marker`;
+  }
+
+  const bounds = L.latLngBounds(
+    [
+      [adminLocation.lat, adminLocation.lng],
+      [selectedEntry.lat, selectedEntry.lng],
+    ]
+  );
+  map.fitBounds(bounds, { padding: [36, 36], maxZoom: 14 });
+}
+
+function updateAdminLocationStatus() {
+  if (!trackerAdminLocationStatus) return;
+  if (!navigator.geolocation) {
+    trackerAdminLocationStatus.textContent = "This browser does not support live admin location";
+    return;
+  }
+  if (!adminLocation) {
+    trackerAdminLocationStatus.textContent = "Finding your current location...";
+    return;
+  }
+  trackerAdminLocationStatus.textContent = `${Number(adminLocation.lat).toFixed(4)}, ${Number(adminLocation.lng).toFixed(4)} · ${formatDistance(adminLocation.accuracy)}`;
+}
+
+function startAdminLocationTracking() {
+  if (!navigator.geolocation) {
+    updateAdminLocationStatus();
+    updateNearestEmergencyStatus(currentLocations);
+    return;
+  }
+
+  if (adminGeoWatchId !== null) {
+    try {
+      navigator.geolocation.clearWatch(adminGeoWatchId);
+    } catch (error) {}
+    adminGeoWatchId = null;
+  }
+
+  const onSuccess = (position) => {
+    adminLocation = {
+      lat: position.coords.latitude,
+      lng: position.coords.longitude,
+      accuracy: Number.isFinite(position.coords.accuracy) ? position.coords.accuracy : null,
+    };
+    updateAdminLocationStatus();
+    updateAdminMarker();
+    updateNearestEmergencyStatus(currentLocations);
+    updateGuideLine();
+  };
+
+  const onError = () => {
+    if (trackerAdminLocationStatus) {
+      trackerAdminLocationStatus.textContent = "Allow location access to show the admin marker";
+    }
+    if (trackerNearestEmergency && currentLocations.some((entry) => entry?.emergencyActive === true)) {
+      trackerNearestEmergency.textContent = "Allow admin location to estimate the closest emergency";
+    }
+    updateGuideLine();
+  };
+
+  navigator.geolocation.getCurrentPosition(onSuccess, onError, {
+    enableHighAccuracy: true,
+    timeout: 15000,
+    maximumAge: 0,
+  });
+
+  try {
+    adminGeoWatchId = navigator.geolocation.watchPosition(onSuccess, onError, {
+      enableHighAccuracy: true,
+      timeout: 20000,
+      maximumAge: 5000,
+    });
+  } catch (error) {
+    console.warn("Failed to watch admin location:", error);
+  }
+}
+
 function scrollToDetails() {
   trackerDetailSection?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -224,6 +432,13 @@ function renderDetail(entry) {
   detailCoords.textContent = formatCoords(entry);
   detailUpdated.textContent = formatTimestamp(entry.updatedAt);
   detailEmergencyStatus.textContent = isWarning ? getEmergencyLabel(entry) : "Location shared normally";
+  if (detailGuideDistance) {
+    if (adminLocation) {
+      detailGuideDistance.textContent = `${formatDistance(haversineDistanceMeters(adminLocation, { lat: entry.lat, lng: entry.lng }))} from the admin marker`;
+    } else {
+      detailGuideDistance.textContent = "Admin location is needed to estimate distance.";
+    }
+  }
   detailMessage.textContent = isWarning
     ? entry.emergencyMessage || "No emergency message for this location."
     : "No emergency alert is active for this shared location.";
@@ -279,6 +494,7 @@ function renderLocations(locations) {
       ? "Showing synced user markers"
       : "Waiting for user shares";
   trackerLastUpdated.textContent = locations.length ? formatTimestamp(locations[0]?.updatedAt) : "--";
+  updateNearestEmergencyStatus(locations);
 
   trackerList.innerHTML = "";
 
@@ -367,14 +583,22 @@ function renderLocations(locations) {
   });
 
   renderDetail(selectedLocationId ? locations.find((entry) => entry.id === selectedLocationId) || null : null);
+  updateAdminMarker();
+  updateGuideLine();
 
-  if (bounds.length === 1) {
-    map?.setView(bounds[0], 13);
+  if (selectedLocationId && adminLocation) {
     return;
   }
 
-  if (bounds.length > 1) {
-    map?.fitBounds(bounds, { padding: [28, 28] });
+  const allBounds = adminLocation ? [[adminLocation.lat, adminLocation.lng], ...bounds] : bounds;
+
+  if (allBounds.length === 1) {
+    map?.setView(allBounds[0], 13);
+    return;
+  }
+
+  if (allBounds.length > 1) {
+    map?.fitBounds(allBounds, { padding: [28, 28] });
   }
 }
 
@@ -466,11 +690,22 @@ observeAuth((user) => {
   trackerUsername.textContent = user.displayName || user.email?.split("@")[0] || "--";
   trackerEmail.textContent = user.email || "--";
   trackerRole.textContent = "Administrator";
+  updateAdminLocationStatus();
+  startAdminLocationTracking();
 
   unsubscribeSharedLocations?.();
   unsubscribeSharedLocations = observeSharedLocations((locations) => {
     renderLocations(locations);
   });
+});
+
+window.addEventListener("beforeunload", () => {
+  if (unsubscribeSharedLocations) unsubscribeSharedLocations();
+  if (adminGeoWatchId !== null && navigator.geolocation) {
+    try {
+      navigator.geolocation.clearWatch(adminGeoWatchId);
+    } catch (error) {}
+  }
 });
 
 window.addEventListener("load", () => {
