@@ -48,6 +48,7 @@ const mobileChartsLink = document.getElementById("mobileChartsLink");
 const mobileTrackerLink = document.getElementById("mobileTrackerLink");
 const trackerQuickAction = document.getElementById("trackerQuickAction");
 const trackerActionLink = document.getElementById("trackerActionLink");
+const locationShareSection = document.getElementById("locationShareSection");
 const shareLocationQuickAction = document.getElementById("shareLocationQuickAction");
 const emergencyQuickAction = document.getElementById("emergencyQuickAction");
 const shareLocationBtn = document.getElementById("shareLocationBtn");
@@ -146,6 +147,7 @@ function renderWorkspaceSummary({ role = t("guest_role"), ownedCount = 0, commun
   mobileTrackerLink?.classList.toggle("hidden", !admin);
   trackerQuickAction?.classList.toggle("hidden", !admin);
   trackerActionLink?.classList.toggle("hidden", !admin);
+  locationShareSection?.classList.toggle("hidden", admin);
   shareLocationQuickAction?.classList.toggle("hidden", admin);
   emergencyQuickAction?.classList.toggle("hidden", admin);
   shareLocationBtn?.classList.toggle("hidden", admin);
