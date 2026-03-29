@@ -3143,6 +3143,28 @@ textarea#landmarkSummary {
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+.admin-metric-trigger {
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.admin-metric-trigger:hover {
+  transform: translateY(-2px);
+  border-color: rgba(90, 154, 106, 0.28);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.admin-metric-trigger:focus-visible,
+.admin-metric-trigger.is-active {
+  outline: none;
+  border-color: rgba(90, 154, 106, 0.42);
+  box-shadow: 0 0 0 3px rgba(90, 154, 106, 0.18);
+  background: rgba(255, 255, 255, 0.055);
+}
+
 .admin-metric-tile::before {
   content: "";
   position: absolute;
@@ -3202,6 +3224,107 @@ textarea#landmarkSummary {
 
 .admin-chart-panel-wide {
   grid-column: 1 / -1;
+}
+
+.admin-metric-detail {
+  margin-top: 2px;
+}
+
+.admin-history-list {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-history-item,
+.admin-history-summary {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.admin-history-item-link {
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.admin-history-item-link:hover,
+.admin-history-item-link:focus-visible {
+  outline: none;
+  transform: translateY(-1px);
+  border-color: rgba(90, 154, 106, 0.34);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.admin-history-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.admin-history-head h5 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.admin-history-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.admin-history-copy {
+  color: var(--text);
+  opacity: 0.92;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.admin-history-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(90, 154, 106, 0.24);
+  background: rgba(90, 154, 106, 0.12);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.admin-history-badge.is-warn {
+  border-color: rgba(201, 74, 74, 0.3);
+  background: rgba(201, 74, 74, 0.14);
+}
+
+.admin-history-badge.is-info {
+  border-color: rgba(43, 123, 255, 0.3);
+  background: rgba(43, 123, 255, 0.14);
+}
+
+.admin-history-empty {
+  padding: 18px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  color: var(--muted);
+}
+
+.admin-history-split {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
 }
 
 .admin-line-chart {
