@@ -838,6 +838,7 @@ sendEmergencyBtn?.addEventListener("click", async () => {
   sendEmergencyBtn.disabled = true;
 
   try {
+    const position = await getCurrentPosition();
     const uploaded = await uploadImages([file]);
     const imageUrl = uploaded?.[0];
     if (!imageUrl) {
@@ -847,6 +848,9 @@ sendEmergencyBtn?.addEventListener("click", async () => {
     currentLocationRecord = await submitEmergencyReport({
       message,
       imageUrl,
+      lat: position.coords.latitude,
+      lng: position.coords.longitude,
+      accuracy: position.coords.accuracy,
     });
 
     renderLocationShareState(currentLocationRecord);
