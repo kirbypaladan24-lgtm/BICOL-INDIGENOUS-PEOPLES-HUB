@@ -211,6 +211,10 @@ function getSharedLocationDocRef(uid) {
   return doc(db, "shared_locations", uid);
 }
 
+function getPrivateUserDocRef(uid) {
+  return doc(db, "users_private", uid);
+}
+
 async function bumpUserCount() {
   try {
     await setDoc(statsRef, { userCount: increment(1) }, { merge: true });
@@ -305,6 +309,35 @@ function resolveDisplayIdentity(user, profile = null) {
   };
 }
 
+export async function fetchPrivateUserProfile(uid = auth.currentUser?.uid, forceServer = true) {
+  if (!uid) return null;
+
+  const privateRef = getPrivateUserDocRef(uid);
+
+  try {
+    const snap = forceServer ? await getDocFromServer(privateRef) : await getDoc(privateRef);
+    return snap.exists() ? snap.data() : null;
+  } catch (error) {
+    if (!forceServer) throw error;
+    const snap = await getDoc(privateRef);
+    return snap.exists() ? snap.data() : null;
+  }
+}
+
+async function resolveSharedLocationProfile(user, existingLocation = null) {
+  const [publicProfile, privateProfile] = await Promise.all([
+    getUserProfile(user.uid).catch(() => null),
+    fetchPrivateUserProfile(user.uid, false).catch(() => null),
+  ]);
+
+  const identity = resolveDisplayIdentity(user, publicProfile);
+
+  return {
+    identity,
+    phone: privateProfile?.phone || existingLocation?.phone || null,
+  };
+}
+
 export async function fetchSharedLocation(uid = auth.currentUser?.uid, forceServer = true) {
   if (!uid) return null;
 
@@ -326,12 +359,8 @@ export async function acknowledgeLocationConsent() {
     throw new Error("Login required to share location.");
   }
 
-  const [profile, existingLocation] = await Promise.all([
-    getUserProfile(user.uid).catch(() => null),
-    fetchSharedLocation(user.uid, false).catch(() => null),
-  ]);
-
-  const identity = resolveDisplayIdentity(user, profile);
+  const existingLocation = await fetchSharedLocation(user.uid, false).catch(() => null);
+  const { identity, phone } = await resolveSharedLocationProfile(user, existingLocation);
   const locationRef = getSharedLocationDocRef(user.uid);
 
   await setDoc(
@@ -341,6 +370,7 @@ export async function acknowledgeLocationConsent() {
       uid: user.uid,
       username: identity.username,
       email: identity.email,
+      phone,
       consentAccepted: true,
       consentAcceptedAt: existingLocation?.consentAcceptedAt || serverTimestamp(),
       sharingEnabled: existingLocation?.sharingEnabled === true,
@@ -362,12 +392,8 @@ export async function saveCurrentUserSharedLocation({ lat, lng, accuracy = null 
     throw new Error("A valid latitude and longitude are required.");
   }
 
-  const [profile, existingLocation] = await Promise.all([
-    getUserProfile(user.uid).catch(() => null),
-    fetchSharedLocation(user.uid, false).catch(() => null),
-  ]);
-
-  const identity = resolveDisplayIdentity(user, profile);
+  const existingLocation = await fetchSharedLocation(user.uid, false).catch(() => null);
+  const { identity, phone } = await resolveSharedLocationProfile(user, existingLocation);
   const normalizedAccuracy = Number.isFinite(accuracy) ? Math.round(accuracy) : null;
 
   await setDoc(
@@ -377,6 +403,7 @@ export async function saveCurrentUserSharedLocation({ lat, lng, accuracy = null 
       uid: user.uid,
       username: identity.username,
       email: identity.email,
+      phone,
       lat,
       lng,
       accuracy: normalizedAccuracy,
@@ -389,6 +416,82 @@ export async function saveCurrentUserSharedLocation({ lat, lng, accuracy = null 
   );
 
   return fetchSharedLocation(user.uid, false);
+}
+
+export async function submitEmergencyReport({ message, imageUrl }) {
+  const user = auth.currentUser;
+  if (!user?.uid || user.isAnonymous) {
+    throw new Error("Login required to send an emergency report.");
+  }
+
+  const trimmedMessage = String(message || "").trim();
+  if (!trimmedMessage) {
+    throw new Error("Please describe the emergency before sending.");
+  }
+  if (!imageUrl) {
+    throw new Error("Image proof is required before sending the emergency report.");
+  }
+
+  const existingLocation = await fetchSharedLocation(user.uid, false).catch(() => null);
+  if (!existingLocation?.sharingEnabled || !Number.isFinite(existingLocation?.lat) || !Number.isFinite(existingLocation?.lng)) {
+    throw new Error("Share your current location first before sending an emergency report.");
+  }
+
+  const { identity, phone } = await resolveSharedLocationProfile(user, existingLocation);
+
+  await setDoc(
+    getSharedLocationDocRef(user.uid),
+    {
+      userId: user.uid,
+      uid: user.uid,
+      username: identity.username,
+      email: identity.email,
+      phone,
+      emergencyActive: true,
+      emergencyMessage: trimmedMessage,
+      emergencyImageUrl: imageUrl,
+      emergencyStatus: "pending",
+      emergencySubmittedAt: serverTimestamp(),
+      responseStatus: null,
+      responseReason: null,
+      respondedAt: deleteField(),
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
+
+  return fetchSharedLocation(user.uid, false);
+}
+
+export async function respondToEmergency(userId, { status, reason = "" }) {
+  const user = auth.currentUser;
+  if (!user?.uid || user.isAnonymous || !isAdmin(user)) {
+    throw new Error("Administrator access is required to respond.");
+  }
+
+  const normalizedStatus = String(status || "").trim();
+  const allowed = ["approved", "help_on_the_way", "declined"];
+  if (!allowed.includes(normalizedStatus)) {
+    throw new Error("Choose a valid emergency response.");
+  }
+
+  const trimmedReason = String(reason || "").trim();
+  if (normalizedStatus === "declined" && !trimmedReason) {
+    throw new Error("A reason is required when declining an emergency report.");
+  }
+
+  await setDoc(
+    getSharedLocationDocRef(userId),
+    {
+      responseStatus: normalizedStatus,
+      responseReason: trimmedReason || null,
+      respondedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
+
+  return fetchSharedLocation(userId, false);
 }
 
 export function observeSharedLocations(callback) {
