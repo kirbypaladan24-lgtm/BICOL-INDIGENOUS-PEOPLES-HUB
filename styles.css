@@ -389,19 +389,16 @@ button {
 
 [data-reveal].reveal-ready {
   opacity: 0;
-  transform: translateY(28px) scale(0.985);
-  filter: blur(10px);
+  transform: translateY(18px);
   transition:
-    opacity 0.72s ease,
-    transform 0.82s cubic-bezier(0.22, 1, 0.36, 1),
-    filter 0.72s ease;
+    opacity 0.5s ease,
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
   transition-delay: var(--reveal-delay, 0ms);
 }
 
 [data-reveal].reveal-ready.is-visible {
   opacity: 1;
-  transform: translateY(0) scale(1);
-  filter: blur(0);
+  transform: translateY(0);
 }
 
 .hero {
@@ -924,6 +921,11 @@ button {
   gap: 14px;
 }
 
+.workspace-meta--compact {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
 .workspace-meta-pill {
   position: relative;
   overflow: hidden;
@@ -936,6 +938,20 @@ button {
     linear-gradient(160deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)),
     rgba(255, 255, 255, 0.02);
   box-shadow: var(--shadow);
+}
+
+.workspace-meta--compact .workspace-meta-pill {
+  gap: 3px;
+  padding: 8px 2px 8px 12px;
+  border-radius: 0;
+  border: 0;
+  border-left: 2px solid rgba(195, 107, 42, 0.28);
+  background: transparent;
+  box-shadow: none;
+}
+
+.workspace-meta--compact .workspace-meta-pill::after {
+  display: none;
 }
 
 .workspace-meta-pill::after {
@@ -960,10 +976,24 @@ button {
   line-height: 1.1;
 }
 
+.workspace-meta--compact .workspace-meta-pill span {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
+.workspace-meta--compact .workspace-meta-pill strong {
+  font-size: clamp(1rem, 1.6vw, 1.2rem);
+}
+
 .profile-summary-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
+}
+
+.profile-summary-grid--compact {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
 }
 
 .profile-stat-card {
@@ -976,6 +1006,15 @@ button {
   box-shadow: var(--shadow);
 }
 
+.profile-summary-grid--compact .profile-stat-card {
+  padding: 8px 4px 8px 12px;
+  border-radius: 0;
+  border: 0;
+  border-left: 2px solid rgba(90, 154, 106, 0.32);
+  background: transparent;
+  box-shadow: none;
+}
+
 .profile-stat-card strong {
   display: block;
   margin: 10px 0 6px;
@@ -983,10 +1022,20 @@ button {
   line-height: 1;
 }
 
+.profile-summary-grid--compact .profile-stat-card strong {
+  margin: 6px 0 2px;
+  font-size: clamp(20px, 2.4vw, 24px);
+}
+
 .profile-stat-card p {
   margin: 0;
   color: var(--muted);
   line-height: 1.55;
+}
+
+.profile-summary-grid--compact .profile-stat-card p {
+  font-size: 0.88rem;
+  line-height: 1.35;
 }
 
 .profile-stat-label {
@@ -1181,6 +1230,15 @@ button {
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
     rgba(255, 255, 255, 0.02);
+}
+
+.tracker-route-pill {
+  padding: 10px 0 10px 12px;
+  border-radius: 0;
+  border: 0;
+  border-left: 2px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  box-shadow: none;
 }
 
 .tracker-route-pill span {
@@ -3281,6 +3339,15 @@ textarea#landmarkSummary {
   gap: 14px;
 }
 
+.admin-insights-card--streamlined {
+  gap: 22px;
+}
+
+.admin-insights-card--streamlined .admin-card-head {
+  justify-content: flex-end;
+  padding-bottom: 6px;
+}
+
 .admin-metric-tile {
   position: relative;
   overflow: hidden;
@@ -3292,6 +3359,22 @@ textarea#landmarkSummary {
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+.admin-metrics-grid {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.admin-metric-tile {
+  gap: 4px;
+  min-height: 86px;
+  padding: 8px 4px 10px 12px;
+  border-radius: 0;
+  background: transparent;
+  border: 0;
+  border-left: 2px solid rgba(255, 255, 255, 0.12);
+  box-shadow: none;
+}
+
 .admin-metric-trigger {
   text-align: left;
   font: inherit;
@@ -3301,26 +3384,21 @@ textarea#landmarkSummary {
 }
 
 .admin-metric-trigger:hover {
-  transform: translateY(-2px);
-  border-color: rgba(90, 154, 106, 0.28);
-  background: rgba(255, 255, 255, 0.05);
+  transform: translateX(2px);
+  border-left-color: rgba(90, 154, 106, 0.45);
+  background: transparent;
 }
 
 .admin-metric-trigger:focus-visible,
 .admin-metric-trigger.is-active {
   outline: none;
-  border-color: rgba(90, 154, 106, 0.42);
-  box-shadow: 0 0 0 3px rgba(90, 154, 106, 0.18);
-  background: rgba(255, 255, 255, 0.055);
+  border-left-color: rgba(90, 154, 106, 0.55);
+  box-shadow: none;
+  background: transparent;
 }
 
 .admin-metric-tile::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto;
-  height: 3px;
-  background: var(--accent-2);
-  opacity: 0.85;
+  display: none;
 }
 
 .admin-metric-tile:nth-child(2)::before {
@@ -3337,11 +3415,11 @@ textarea#landmarkSummary {
 
 .admin-metric-label {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .admin-metric-tile strong {
-  font-size: clamp(1.8rem, 2.8vw, 2.4rem);
+  font-size: clamp(1.55rem, 2.4vw, 2rem);
   line-height: 1;
 }
 
