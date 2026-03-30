@@ -1,5 +1,5 @@
 import { observeAuth, observeSharedLocations, isAdmin, logout, respondToEmergency } from "./auth.js";
-import { initI18n } from "./i18n.js";
+import { initI18n, t } from "./i18n.js";
 import { showToast } from "./ui.js";
 import { registerServiceWorker } from "./pwa.js";
 import { initRevealAnimations } from "./motion.js";
@@ -188,11 +188,11 @@ function entryMatchesSearch(entry) {
 }
 
 function getEmergencyLabel(entry) {
-  if (entry?.responseStatus === "approved") return "Approved";
-  if (entry?.responseStatus === "help_on_the_way") return "Help is on the way";
-  if (entry?.responseStatus === "declined") return "Declined";
-  if (entry?.emergencyStatus === "pending") return "Pending admin review";
-  return "No active alert";
+  if (entry?.responseStatus === "approved") return t("approved");
+  if (entry?.responseStatus === "help_on_the_way") return t("help_on_the_way");
+  if (entry?.responseStatus === "declined") return t("decline");
+  if (entry?.emergencyStatus === "pending") return t("pending_admin_review");
+  return t("no_alert");
 }
 
 function getEntryMode(entry) {
@@ -206,18 +206,18 @@ function formatCoords(entry) {
 function buildMarkerPopup(entry) {
   const username = escapeHtml(entry.username || "--");
   const email = escapeHtml(entry.email || "No email saved");
-  const phone = escapeHtml(entry.phone || "No phone number saved");
+  const phone = escapeHtml(entry.phone || t("no_phone_saved"));
   const coords = escapeHtml(formatCoords(entry));
   const updated = escapeHtml(formatTimestamp(entry.updatedAt));
   const status = escapeHtml(getEntryMode(entry) === "warning" ? getEmergencyLabel(entry) : "Location shared normally");
 
   return `
     <strong>${username}</strong><br />
-    Email: ${email}<br />
-    Phone: ${phone}<br />
-    Coordinates: ${coords}<br />
-    Updated: ${updated}<br />
-    Status: ${status}
+    ${escapeHtml(t("email"))}: ${email}<br />
+    ${escapeHtml(t("phone_label"))}: ${phone}<br />
+    ${escapeHtml(t("coordinates_label"))}: ${coords}<br />
+    ${escapeHtml(t("updated_label"))}: ${updated}<br />
+    ${escapeHtml(t("status_label"))}: ${status}
   `;
 }
 
@@ -248,7 +248,7 @@ function updateAdminMarker() {
     adminMarker.setLatLng([adminLocation.lat, adminLocation.lng]);
   }
   adminMarker.bindPopup(
-    `Your current admin location<br />Accuracy: ${escapeHtml(formatDistance(adminLocation.accuracy))}`,
+    `${escapeHtml(t("your_current_admin_location"))}<br />${escapeHtml(t("accuracy_label"))}: ${escapeHtml(formatDistance(adminLocation.accuracy))}`,
     { maxWidth: 220 }
   );
 }
@@ -266,11 +266,11 @@ function updateNearestEmergencyStatus(locations = currentLocations) {
   if (!trackerNearestEmergency) return;
   const emergencyLocations = (locations || []).filter((entry) => entry?.emergencyActive === true);
   if (!emergencyLocations.length) {
-    trackerNearestEmergency.textContent = "No active emergency alerts";
+    trackerNearestEmergency.textContent = t("no_active_emergency_alerts");
     return;
   }
   if (!adminLocation) {
-    trackerNearestEmergency.textContent = "Enable admin location to estimate nearest emergency";
+    trackerNearestEmergency.textContent = t("enable_admin_location_estimate");
     return;
   }
 
@@ -281,7 +281,10 @@ function updateNearestEmergencyStatus(locations = currentLocations) {
     }))
     .sort((a, b) => a.distance - b.distance)[0];
 
-  trackerNearestEmergency.textContent = `${nearest.entry.username || nearest.entry.email || "Unknown user"} · ${formatDistance(nearest.distance)}`;
+  trackerNearestEmergency.textContent = t("nearest_emergency_format", {
+    user: nearest.entry.username || nearest.entry.email || t("unknown_user"),
+    distance: formatDistance(nearest.distance),
+  });
 }
 
 function updateGuideLine() {
@@ -293,13 +296,13 @@ function updateGuideLine() {
   if (!selectedEntry || !adminLocation) {
     if (trackerGuideStatus) {
       trackerGuideStatus.textContent = selectedEntry
-        ? "Admin location is needed to draw the guide line"
-        : "Select a shared location to draw a guide line";
+        ? t("admin_location_needed_guide")
+        : t("select_shared_location_guide");
     }
     if (detailGuideDistance) {
       detailGuideDistance.textContent = selectedEntry
-        ? "Admin location is needed to estimate distance."
-        : "Select a location to estimate distance from the admin marker.";
+        ? t("admin_location_needed_distance")
+        : t("guide_distance_select");
     }
     return;
   }
@@ -320,10 +323,10 @@ function updateGuideLine() {
   ).addTo(map);
 
   if (trackerGuideStatus) {
-    trackerGuideStatus.textContent = `Guide line active · ${formatDistance(distance)}`;
+    trackerGuideStatus.textContent = t("guide_line_active", { distance: formatDistance(distance) });
   }
   if (detailGuideDistance) {
-    detailGuideDistance.textContent = `${formatDistance(distance)} from the admin marker`;
+    detailGuideDistance.textContent = t("guide_distance_from_admin", { distance: formatDistance(distance) });
   }
 
   const bounds = L.latLngBounds(
@@ -338,11 +341,11 @@ function updateGuideLine() {
 function updateAdminLocationStatus() {
   if (!trackerAdminLocationStatus) return;
   if (!navigator.geolocation) {
-    trackerAdminLocationStatus.textContent = "This browser does not support live admin location";
+    trackerAdminLocationStatus.textContent = t("browser_no_live_admin_location");
     return;
   }
   if (!adminLocation) {
-    trackerAdminLocationStatus.textContent = "Finding your current location...";
+    trackerAdminLocationStatus.textContent = t("finding_current_location");
     return;
   }
   trackerAdminLocationStatus.textContent = `${Number(adminLocation.lat).toFixed(4)}, ${Number(adminLocation.lng).toFixed(4)} · ${formatDistance(adminLocation.accuracy)}`;
@@ -376,10 +379,10 @@ function startAdminLocationTracking() {
 
   const onError = () => {
     if (trackerAdminLocationStatus) {
-      trackerAdminLocationStatus.textContent = "Allow location access to show the admin marker";
+      trackerAdminLocationStatus.textContent = t("allow_location_admin_marker");
     }
     if (trackerNearestEmergency && currentLocations.some((entry) => entry?.emergencyActive === true)) {
-      trackerNearestEmergency.textContent = "Allow admin location to estimate the closest emergency";
+      trackerNearestEmergency.textContent = t("allow_admin_location_estimate");
     }
     updateGuideLine();
   };
@@ -431,21 +434,23 @@ function renderDetail(entry) {
   closeTrackerDetail?.classList.remove("hidden");
   const isWarning = getEntryMode(entry) === "warning";
   detailUsername.textContent = entry.username || "--";
-  detailEmail.textContent = entry.email || "No email saved";
-  detailPhone.textContent = entry.phone || "No phone number saved";
+  detailEmail.textContent = entry.email || t("no_email_saved");
+  detailPhone.textContent = entry.phone || t("no_phone_saved");
   detailCoords.textContent = formatCoords(entry);
   detailUpdated.textContent = formatTimestamp(entry.updatedAt);
-  detailEmergencyStatus.textContent = isWarning ? getEmergencyLabel(entry) : "Location shared normally";
+  detailEmergencyStatus.textContent = isWarning ? getEmergencyLabel(entry) : t("location_shared_normally");
   if (detailGuideDistance) {
     if (adminLocation) {
-      detailGuideDistance.textContent = `${formatDistance(haversineDistanceMeters(adminLocation, { lat: entry.lat, lng: entry.lng }))} from the admin marker`;
+      detailGuideDistance.textContent = t("guide_distance_from_admin", {
+        distance: formatDistance(haversineDistanceMeters(adminLocation, { lat: entry.lat, lng: entry.lng })),
+      });
     } else {
-      detailGuideDistance.textContent = "Admin location is needed to estimate distance.";
+      detailGuideDistance.textContent = t("admin_location_needed_distance");
     }
   }
   detailMessage.textContent = isWarning
-    ? entry.emergencyMessage || "No emergency message for this location."
-    : "No emergency alert is active for this shared location.";
+    ? entry.emergencyMessage || t("no_emergency_message")
+    : t("no_active_emergency_for_location");
   responseReason.value = entry.responseReason || "";
 
   if (isWarning && entry.emergencyImageUrl) {
@@ -457,8 +462,8 @@ function renderDetail(entry) {
     detailProofImage.classList.add("hidden");
     detailNoProof.classList.toggle("hidden", isWarning && Boolean(entry.emergencyImageUrl));
     detailNoProof.textContent = isWarning
-      ? "No emergency proof image was uploaded for this location."
-      : "This location has no active emergency report. Click a warning marker to review an emergency alert.";
+      ? t("tracker_no_proof")
+      : t("no_active_emergency_click_warning");
   }
 
   const canRespond = isWarning;
@@ -487,16 +492,16 @@ function renderLocations(locations) {
 
   trackerCount.textContent = String(locations.length);
   trackerEmergencyCount.textContent = String(locations.filter((entry) => entry?.emergencyActive === true).length);
-  trackerStatus.textContent = locations.length
+    trackerStatus.textContent = locations.length
     ? trackerSearchQuery.trim()
-      ? `Highlighted ${matchedLocations.length} matching user location${matchedLocations.length === 1 ? "" : "s"} on the map.`
-      : `${locations.length} user location${locations.length === 1 ? "" : "s"} synced for the admin tracker.`
-    : "No user has shared a location yet.";
+      ? t("tracker_status_highlighted", { count: matchedLocations.length })
+      : t("tracker_status_synced", { count: locations.length })
+    : t("tracker_status_none");
   trackerMapStatus.textContent = locations.some((entry) => entry?.emergencyActive === true)
-    ? "Warning markers are active"
+    ? t("warning_markers_active")
     : locations.length
-      ? "Showing synced user markers"
-      : "Waiting for user shares";
+      ? t("showing_synced_user_markers")
+      : t("waiting_for_user_shares");
   trackerLastUpdated.textContent = locations.length ? formatTimestamp(locations[0]?.updatedAt) : "--";
   updateNearestEmergencyStatus(locations);
 
@@ -507,7 +512,7 @@ function renderLocations(locations) {
   }
 
   if (!locations.length) {
-    trackerList.innerHTML = '<div class="tracker-empty">No user locations have been shared yet.</div>';
+    trackerList.innerHTML = `<div class="tracker-empty">${escapeHtml(t("tracker_empty"))}</div>`;
     map?.setView(BICOL_CENTER, 7);
     renderDetail(null);
     return;
@@ -522,7 +527,7 @@ function renderLocations(locations) {
   const bounds = [];
 
   if (trackerSearchQuery.trim() && !matchedLocations.length) {
-    trackerList.innerHTML = '<div class="tracker-empty">No tracked user matched that username or email.</div>';
+    trackerList.innerHTML = `<div class="tracker-empty">${escapeHtml(t("no_tracked_user_match"))}</div>`;
   }
 
   locations.forEach((entry) => {
@@ -540,13 +545,13 @@ function renderLocations(locations) {
         <div class="tracker-item-head">
           <div>
             <h4>${escapeHtml(username)}</h4>
-            <p>${isWarning ? "Warning marker active" : "Shared location is active"}</p>
+            <p>${isWarning ? escapeHtml(t("warning_marker_active")) : escapeHtml(t("shared_location_active"))}</p>
           </div>
-          <span class="ghost small">${isWarning ? "Warning" : "View"}</span>
+          <span class="ghost small">${isWarning ? escapeHtml(t("warning")) : escapeHtml(t("view"))}</span>
         </div>
         <div class="tracker-item-meta">
-          <p><strong>Updated:</strong> ${escapeHtml(updated)}</p>
-          <p><strong>Status:</strong> ${escapeHtml(isWarning ? emergencyLabel : "Location shared normally")}</p>
+          <p><strong>${escapeHtml(t("updated_label"))}:</strong> ${escapeHtml(updated)}</p>
+          <p><strong>${escapeHtml(t("status_label"))}:</strong> ${escapeHtml(isWarning ? emergencyLabel : t("location_shared_normally"))}</p>
         </div>
       `;
       item.addEventListener("click", () => setSelectedLocation(entry.id, { scrollToDetail: isWarning }));
@@ -620,7 +625,7 @@ async function handleEmergencyResponse(status) {
 
   const reason = responseReason?.value.trim() || "";
   if (status === "declined" && !reason) {
-    showToast("Please add a reason before declining this emergency report.", "warn");
+    showToast(t("tracker_decline_reason_required"), "warn");
     return;
   }
 
@@ -641,10 +646,10 @@ async function handleEmergencyResponse(status) {
         : entry
     );
     selectedLocationId = null;
-    showToast("Emergency response sent successfully.", "success");
+    showToast(t("tracker_response_sent"), "success");
   } catch (error) {
     console.error("Failed to respond to emergency:", error);
-    showToast(error?.message || "Could not send the emergency response.", "error");
+    showToast(error?.message || t("tracker_response_failed"), "error");
   } finally {
     responding = false;
     renderLocations(currentLocations);
@@ -726,6 +731,10 @@ window.addEventListener("load", () => {
   } else {
     ensureMap();
   }
+});
+
+window.addEventListener("language-changed", () => {
+  renderLocations(currentLocations);
 });
 
 initI18n();
