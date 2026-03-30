@@ -8,6 +8,10 @@ import {
   observePosts,
   isAdmin,
   isSuperAdmin,
+  getAdminRoleLabel,
+  canAccessAdminWorkspace,
+  canAccessCharts,
+  canAccessTracker,
   savePost,
   auth,
   getUserProfile,
@@ -48,6 +52,7 @@ const toggleLoginPass = document.getElementById("toggleLoginPass");
 const newPostBtn = document.getElementById("newPostBtn");
 const ctaLoginBtn = document.getElementById("ctaLoginBtn");
 const contributionCtaCard = ctaLoginBtn?.closest(".cta-card");
+const heroContent = document.querySelector(".hero-content");
 const exploreBtn = document.getElementById("exploreBtn");
 const scrollMapBtn = document.getElementById("scrollMapBtn");
 const mobileMenu = document.getElementById("mobileMenu");
@@ -1341,6 +1346,37 @@ function refreshLocalizedRuntimeText() {
   }
 }
 
+function renderAdminHomeNotice(user) {
+  if (!heroContent) return;
+  let notice = document.getElementById("adminHomeNotice");
+
+  if (!isAdmin(user)) {
+    notice?.remove();
+    return;
+  }
+
+  if (!notice) {
+    notice = document.createElement("div");
+    notice.id = "adminHomeNotice";
+    notice.className = "admin-home-notice";
+    heroContent.appendChild(notice);
+  }
+
+  const roleLabel = getAdminRoleLabel(user);
+  let message = "Operational access is active for this account.";
+  if (roleLabel === "Content Admin") {
+    message = "Assigned lane: posts, edits, and moderation.";
+  } else if (roleLabel === "Landmark Admin") {
+    message = "Assigned lane: landmarks, summaries, and map accuracy.";
+  } else if (roleLabel === "Emergency Admin") {
+    message = "Assigned lane: live tracking and emergency response.";
+  } else if (roleLabel === "Super Admin") {
+    message = "Oversight access is active across all admin lanes.";
+  }
+
+  notice.innerHTML = `<strong>${roleLabel}</strong><span>${message}</span>`;
+}
+
 window.addEventListener("language-changed", refreshLocalizedRuntimeText);
 
 observeAuth(async (user) => {
@@ -1355,15 +1391,16 @@ observeAuth(async (user) => {
   mobileChangePassBtn?.classList.toggle("hidden", !authed);
   const isAdminUser = isAdmin(user);
   const isSuperAdminUser = isSuperAdmin(user);
-  adminToolsBtn?.classList.toggle("hidden", !isAdminUser);
-  chartsBtn?.classList.toggle("hidden", !isAdminUser);
-  trackerBtn?.classList.toggle("hidden", !isAdminUser);
-  mobileAdminToolsBtn?.classList.toggle("hidden", !isAdminUser);
-  mobileChartsBtn?.classList.toggle("hidden", !isAdminUser);
-  mobileTrackerBtn?.classList.toggle("hidden", !isAdminUser);
+  adminToolsBtn?.classList.toggle("hidden", !canAccessAdminWorkspace(user));
+  chartsBtn?.classList.toggle("hidden", !canAccessCharts(user));
+  trackerBtn?.classList.toggle("hidden", !canAccessTracker(user));
+  mobileAdminToolsBtn?.classList.toggle("hidden", !canAccessAdminWorkspace(user));
+  mobileChartsBtn?.classList.toggle("hidden", !canAccessCharts(user));
+  mobileTrackerBtn?.classList.toggle("hidden", !canAccessTracker(user));
   setSuperAdminNavVisible(isSuperAdminUser);
   newPostBtn?.classList.toggle("hidden", !authed || isAdminUser);
   contributionCtaCard?.classList.toggle("hidden", authed);
+  renderAdminHomeNotice(user);
   cachedAuthorName = null;
 
   window.__currentUser = user || null;
