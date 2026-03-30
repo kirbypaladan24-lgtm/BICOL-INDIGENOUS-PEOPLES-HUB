@@ -20,7 +20,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
-  <body class="has-desktop-shortcuts">
+  <body class="has-desktop-shortcuts page-control page-tracker">
     <a class="skip-link" href="#trackerMain" data-i18n="skip_to_content">Skip to content</a>
     <header class="topbar">
       <div class="brand">
@@ -96,7 +96,7 @@
             <p class="eyebrow" data-i18n="workspace">Workspace</p>
             <h2 data-i18n="user_location_tracker">User location tracker</h2>
             <p id="trackerStatus" class="section-desc">
-              Checking the latest shared user locations...
+              Loading shared locations...
             </p>
           </div>
           <div class="profile-identity">
@@ -181,12 +181,12 @@
         <div class="admin-card-head">
           <div>
             <p class="admin-card-eyebrow" data-i18n="emergency_details">Emergency Details</p>
-            <h4 data-i18n="selected_location_response">Selected location response</h4>
+            <h4 data-i18n="selected_location_response">Selected location</h4>
           </div>
           <button id="closeTrackerDetail" class="ghost hidden" type="button" data-i18n="hide_details">Hide Details</button>
         </div>
         <div id="trackerDetailEmpty" class="tracker-empty" data-i18n="tracker_detail_empty">
-          Choose a shared location to review it.
+          Select a shared location to review it.
         </div>
         <div id="trackerDetail" class="tracker-detail hidden">
           <div class="tracker-detail-grid">
