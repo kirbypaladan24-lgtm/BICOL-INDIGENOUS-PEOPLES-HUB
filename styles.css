@@ -412,8 +412,8 @@ button {
 .hero-shell {
   position: relative;
   isolation: isolate;
-  padding-top: 44px;
-  padding-bottom: 30px;
+  padding-top: 36px;
+  padding-bottom: 22px;
 }
 
 .hero-shell::before,
@@ -737,7 +737,7 @@ button {
 }
 
 .section {
-  padding: 32px 36px;
+  padding: 28px 36px;
 }
 
 .section-head {
@@ -852,12 +852,12 @@ button {
 
 .profile-dashboard {
   display: grid;
-  gap: 26px;
+  gap: 20px;
 }
 
 .profile-overview-shell {
   display: grid;
-  gap: 22px;
+  gap: 16px;
 }
 
 .profile-overview-card {
@@ -866,8 +866,8 @@ button {
   isolation: isolate;
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.95fr);
-  gap: 18px;
-  padding: 26px;
+  gap: 16px;
+  padding: 22px;
   border-radius: 26px;
   border: 1px solid var(--border);
   background:
@@ -1042,17 +1042,17 @@ button {
 .profile-quick-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
 }
 
 .profile-quick-actions .ghost {
-  min-width: 136px;
+  min-width: 124px;
   justify-content: center;
   text-align: center;
 }
 
 .location-share-card {
-  gap: 18px;
+  gap: 14px;
 }
 
 .profile-location-actions {
@@ -1070,14 +1070,13 @@ button {
 
 .emergency-response-card {
   display: grid;
-  gap: 14px;
-  padding: 18px 20px;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  background:
-    linear-gradient(155deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)),
-    rgba(255, 255, 255, 0.02);
-  box-shadow: var(--shadow);
+  gap: 12px;
+  padding: 14px 0 0 16px;
+  border-radius: 0;
+  border: 0;
+  border-left: 2px solid rgba(195, 107, 42, 0.26);
+  background: transparent;
+  box-shadow: none;
 }
 
 .emergency-response-head {
@@ -1120,10 +1119,8 @@ button {
 }
 
 .emergency-response-card.is-pending {
-  border-color: rgba(195, 107, 42, 0.24);
-  background:
-    linear-gradient(155deg, rgba(195, 107, 42, 0.14), rgba(255, 255, 255, 0.02)),
-    rgba(255, 255, 255, 0.02);
+  border-left-color: rgba(195, 107, 42, 0.48);
+  background: transparent;
 }
 
 .emergency-response-card.is-pending .emergency-response-badge {
@@ -1132,10 +1129,8 @@ button {
 }
 
 .emergency-response-card.is-approved {
-  border-color: rgba(90, 154, 106, 0.28);
-  background:
-    linear-gradient(155deg, rgba(90, 154, 106, 0.16), rgba(255, 255, 255, 0.02)),
-    rgba(255, 255, 255, 0.02);
+  border-left-color: rgba(90, 154, 106, 0.52);
+  background: transparent;
 }
 
 .emergency-response-card.is-approved .emergency-response-badge {
@@ -1144,10 +1139,8 @@ button {
 }
 
 .emergency-response-card.is-help {
-  border-color: rgba(43, 123, 255, 0.26);
-  background:
-    linear-gradient(155deg, rgba(43, 123, 255, 0.14), rgba(255, 255, 255, 0.02)),
-    rgba(255, 255, 255, 0.02);
+  border-left-color: rgba(43, 123, 255, 0.5);
+  background: transparent;
 }
 
 .emergency-response-card.is-help .emergency-response-badge {
@@ -1156,10 +1149,8 @@ button {
 }
 
 .emergency-response-card.is-declined {
-  border-color: rgba(196, 83, 68, 0.28);
-  background:
-    linear-gradient(155deg, rgba(196, 83, 68, 0.16), rgba(255, 255, 255, 0.02)),
-    rgba(255, 255, 255, 0.02);
+  border-left-color: rgba(196, 83, 68, 0.5);
+  background: transparent;
 }
 
 .emergency-response-card.is-declined .emergency-response-badge {
@@ -1188,30 +1179,29 @@ button {
 .tracker-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.8fr);
-  gap: 20px;
+  gap: 16px;
 }
 
 .tracker-map-card,
 .tracker-list-card {
   display: grid;
-  gap: 16px;
+  gap: 12px;
 }
 
 .tracker-search-shell {
   display: grid;
-  gap: 8px;
-  padding: 14px 16px;
-  border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  background:
-    linear-gradient(155deg, rgba(90, 154, 106, 0.12), rgba(255, 255, 255, 0.02)),
-    rgba(255, 255, 255, 0.02);
+  gap: 6px;
+  padding: 0 0 4px;
+  border: 0;
+  background: transparent;
 }
 
 .tracker-route-shell {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 10px;
+  gap: 8px;
+  padding: 0 0 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .tracker-route-pill {
@@ -1248,7 +1238,7 @@ button {
 }
 
 .tracker-search-shell label {
-  font-size: 12px;
+  font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
@@ -1274,9 +1264,9 @@ button {
 
 .tracker-search-field input {
   width: 100%;
-  height: 50px;
+  height: 46px;
   padding: 0 16px 0 88px;
-  border-radius: 14px;
+  border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background:
     linear-gradient(145deg, rgba(9, 16, 11, 0.92), rgba(16, 28, 20, 0.92)),
@@ -1308,40 +1298,37 @@ button {
 
 .tracker-detail-card {
   display: grid;
-  gap: 18px;
+  gap: 14px;
 }
 
 .tracker-list {
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 .tracker-item {
   display: grid;
-  gap: 10px;
-  padding: 16px;
-  border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)),
-    rgba(255, 255, 255, 0.02);
+  gap: 8px;
+  padding: 12px 0 12px 14px;
+  border-radius: 0;
+  border: 0;
+  border-left: 2px solid rgba(255, 255, 255, 0.08);
+  background: transparent;
 }
 
 .tracker-item.is-selected {
-  border-color: rgba(90, 154, 106, 0.45);
-  box-shadow: 0 0 0 1px rgba(90, 154, 106, 0.22), var(--shadow);
+  border-left-color: rgba(90, 154, 106, 0.56);
+  box-shadow: none;
 }
 
 .tracker-item.is-warning {
-  border-color: rgba(196, 83, 68, 0.36);
-  background:
-    linear-gradient(160deg, rgba(196, 83, 68, 0.12), rgba(255, 255, 255, 0.02)),
-    rgba(255, 255, 255, 0.02);
+  border-left-color: rgba(196, 83, 68, 0.54);
+  background: transparent;
 }
 
 .tracker-item.is-match {
-  border-color: rgba(195, 107, 42, 0.34);
-  box-shadow: 0 0 0 1px rgba(195, 107, 42, 0.18), var(--shadow);
+  border-left-color: rgba(195, 107, 42, 0.54);
+  box-shadow: none;
 }
 
 .tracker-item-head {
@@ -1373,22 +1360,23 @@ button {
 }
 
 .tracker-empty {
-  padding: 18px;
-  border-radius: 18px;
-  border: 1px dashed rgba(255, 255, 255, 0.12);
+  padding: 12px 0 12px 14px;
+  border-radius: 0;
+  border: 0;
+  border-left: 2px dashed rgba(255, 255, 255, 0.12);
   color: var(--muted);
-  background: rgba(255, 255, 255, 0.02);
+  background: transparent;
 }
 
 .tracker-detail {
   display: grid;
-  gap: 16px;
+  gap: 12px;
 }
 
 .tracker-detail-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(220px, 0.85fr);
-  gap: 18px;
+  gap: 14px;
 }
 
 .tracker-detail-copy,
@@ -1575,11 +1563,11 @@ button {
 
 .profile-posts-section {
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 .profile-posts-section .section-head {
-  padding-bottom: 8px;
+  padding-bottom: 6px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -1593,14 +1581,14 @@ button {
 
 [data-theme="light"] .tracker-item,
 [data-theme="light"] .tracker-empty {
-  background: #ffffff;
+  background: transparent;
   border-color: #d8dfd2;
   color: #1b1f1a;
 }
 
 [data-theme="light"] .emergency-response-card {
-  background: #ffffff;
-  border-color: #d8dfd2;
+  background: transparent;
+  border-left-color: rgba(195, 107, 42, 0.3);
 }
 
 [data-theme="light"] .emergency-response-badge {
@@ -1610,22 +1598,18 @@ button {
 }
 
 [data-theme="light"] .tracker-item.is-warning {
-  background: rgba(196, 83, 68, 0.08);
-  border-color: rgba(196, 83, 68, 0.24);
+  background: transparent;
+  border-left-color: rgba(196, 83, 68, 0.45);
 }
 
 [data-theme="light"] .tracker-search-shell {
-  background:
-    linear-gradient(155deg, rgba(63, 107, 63, 0.08), rgba(255, 255, 255, 0.92)),
-    #ffffff;
-  border-color: rgba(27, 31, 26, 0.08);
+  background: transparent;
+  border-color: transparent;
 }
 
 [data-theme="light"] .tracker-route-pill {
-  background:
-    linear-gradient(145deg, rgba(63, 107, 63, 0.06), rgba(255, 255, 255, 0.94)),
-    #ffffff;
-  border-color: rgba(27, 31, 26, 0.08);
+  background: transparent;
+  border-color: rgba(27, 31, 26, 0.12);
 }
 
 [data-theme="light"] .tracker-search-field input {
@@ -2238,7 +2222,7 @@ button {
 
 .page-home .about-shell,
 .page-home .contact-shell {
-  gap: 28px;
+  gap: 20px;
 }
 
 .about-story-card,
@@ -2262,7 +2246,7 @@ button {
 .page-home .contact-story-card,
 .page-home .about-card,
 .page-home .cta-card {
-  padding: 10px 0 8px 18px;
+  padding: 8px 0 6px 16px;
   border: 0;
   border-left: 2px solid rgba(255, 255, 255, 0.12);
   border-radius: 0;
@@ -2430,12 +2414,13 @@ button {
 }
 
 .page-home .contact-mail {
-  padding: 6px 0;
+  padding: 0;
   border: 0;
-  border-left: 2px solid rgba(195, 107, 42, 0.22);
   border-radius: 0;
   background: transparent;
-  padding-left: 12px;
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 0.22em;
 }
 
 .contact-cta-card .solid {
@@ -2444,6 +2429,48 @@ button {
 
 .page-home .contact-cta-card .solid {
   margin-top: 6px;
+}
+
+.page-profile .profile-overview-card {
+  padding: 8px 0 10px 16px;
+  border: 0;
+  border-left: 2px solid rgba(195, 107, 42, 0.28);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.page-profile .profile-overview-card::after {
+  display: none;
+}
+
+.page-profile .profile-overview-card .profile-identity {
+  padding: 6px 0 0 14px;
+  border: 0;
+  border-left: 2px solid rgba(90, 154, 106, 0.22);
+  border-radius: 0;
+  background: transparent;
+  min-width: 0;
+}
+
+.page-policy .policy-hero-block,
+.page-policy .two-col .about-card {
+  padding: 8px 0 8px 16px;
+  border: 0;
+  border-left: 2px solid rgba(195, 107, 42, 0.24);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.page-policy .policy-hero-block {
+  margin-bottom: 18px;
+}
+
+.page-policy .policy-hero-block::after,
+.page-policy .two-col .about-card::before,
+.page-policy .two-col .about-card::after {
+  display: none;
 }
 
 .trust-band {
@@ -2553,6 +2580,20 @@ button {
   background: rgba(63, 107, 63, 0.08);
   border-color: rgba(63, 107, 63, 0.18);
   color: #24563b;
+}
+
+[data-theme="light"] .page-home .contact-mail {
+  background: transparent;
+  border-color: transparent;
+  color: #1f6b44;
+}
+
+[data-theme="light"] .page-profile .profile-overview-card,
+[data-theme="light"] .page-profile .profile-overview-card .profile-identity,
+[data-theme="light"] .page-policy .policy-hero-block,
+[data-theme="light"] .page-policy .two-col .about-card {
+  background: transparent;
+  box-shadow: none;
 }
 
 [data-theme="light"] .legend-chip {
