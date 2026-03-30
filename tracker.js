@@ -47,6 +47,7 @@ const declineEmergencyBtn = document.getElementById("declineEmergencyBtn");
 
 const THEME_KEY = "bicol-ip-theme";
 const BICOL_CENTER = [13.420988, 123.413673];
+const TRACKER_CLOSE_LABEL_ZOOM = 15;
 const trackerParams = new URLSearchParams(window.location.search);
 let preselectedUserId = trackerParams.get("user");
 let preselectedFocusMode = trackerParams.get("focus");
@@ -63,6 +64,7 @@ let adminLocation = null;
 let adminMarker = null;
 let guideLine = null;
 let adminGeoWatchId = null;
+let trackerMapEventsBound = false;
 
 function applyTheme(theme) {
   const value = theme === "light" ? "light" : "dark";
@@ -132,7 +134,19 @@ function ensureMap() {
   }).addTo(map);
 
   markersLayer = L.layerGroup().addTo(map);
+  if (!trackerMapEventsBound) {
+    map.on("zoomend", () => {
+      if (currentLocations.length) {
+        renderLocations(currentLocations, { preserveViewport: true });
+      }
+    });
+    trackerMapEventsBound = true;
+  }
   return true;
+}
+
+function shouldShowCloseupLabels() {
+  return Boolean(map) && map.getZoom() >= TRACKER_CLOSE_LABEL_ZOOM;
 }
 
 function createAdminLocationIcon() {
@@ -475,7 +489,8 @@ function renderDetail(entry) {
   if (responseReason) responseReason.disabled = !canRespond || responding;
 }
 
-function renderLocations(locations) {
+function renderLocations(locations, options = {}) {
+  const { preserveViewport = false } = options;
   if (!ensureMap()) {
     if (!mapRetryQueued) {
       mapRetryQueued = true;
@@ -566,12 +581,14 @@ function renderLocations(locations) {
 
     if (markersLayer) {
       const marker = L.marker([entry.lat, entry.lng], createMarkerIcon(entry) ? { icon: createMarkerIcon(entry) } : undefined);
-      marker.bindTooltip(escapeHtml(entry.email || entry.username || "Tracked user"), {
-        permanent: true,
-        direction: "top",
-        offset: [0, -18],
-        className: `tracker-email-label${isWarning ? " is-warning" : ""}${isMatch ? " is-match" : ""}`,
-      });
+      if (shouldShowCloseupLabels()) {
+        marker.bindTooltip(escapeHtml(entry.email || entry.username || "Tracked user"), {
+          permanent: true,
+          direction: "top",
+          offset: [0, -18],
+          className: `tracker-email-label${isWarning ? " is-warning" : ""}${isMatch ? " is-match" : ""}`,
+        });
+      }
       marker.bindPopup(buildMarkerPopup(entry), {
         maxWidth: 260,
       });
@@ -601,6 +618,10 @@ function renderLocations(locations) {
     scrollToDetails();
     preselectedUserId = null;
     preselectedFocusMode = null;
+  }
+
+  if (preserveViewport) {
+    return;
   }
 
   if (selectedLocationId && adminLocation) {
