@@ -38,8 +38,11 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 import { assertFirebaseConfig } from "./firebase-config.js";
 
-const ADMIN_UID = "6bs7TaQnJBZDGiyhR1eoDMLncsb2";
-const ADMIN_EMAIL = "admin@ip-bicol.com";
+const ADMIN_UIDS = new Set([
+  "7gquSWQ94xZZLMxLCW4Xlv2QJ613",
+  "L6aGCzr08Wd4gcj6ndiAqa0Z5dx2",
+  "TI0yeuCaYcggEJmjh7H4BlAmp562",
+]);
 
 const firebaseConfig = assertFirebaseConfig();
 const app = initializeApp(firebaseConfig);
@@ -194,7 +197,7 @@ export async function createAccountWithProfile({ email, password, username, phon
 
 export function isAdmin(user) {
   if (!user) return false;
-  return user.uid === ADMIN_UID || (user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase());
+  return ADMIN_UIDS.has(user.uid);
 }
 
 const postsRef = collection(db, "posts");
