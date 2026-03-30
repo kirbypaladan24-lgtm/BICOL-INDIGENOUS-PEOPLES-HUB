@@ -1,8 +1,9 @@
-import { observeAuth, logout, changePassword, isAdmin } from "./auth.js";
+import { observeAuth, logout, changePassword, isAdmin, isSuperAdmin } from "./auth.js";
 import { initI18n, t } from "./i18n.js";
 import { showToast } from "./ui.js";
 import { registerServiceWorker } from "./pwa.js";
 import { initRevealAnimations } from "./motion.js";
+import { setSuperAdminNavVisible } from "./role-nav.js";
 
 const THEME_KEY = "bicol-ip-theme";
 
@@ -136,6 +137,7 @@ changePassForm?.addEventListener("submit", async (event) => {
 observeAuth((user) => {
   const authed = !!user;
   const admin = isAdmin(user);
+  setSuperAdminNavVisible(isSuperAdmin(user));
 
   loginBtn?.classList.toggle("hidden", authed);
   logoutBtn?.classList.toggle("hidden", !authed);
