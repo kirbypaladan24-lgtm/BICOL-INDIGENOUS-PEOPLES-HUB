@@ -23,6 +23,7 @@ export default defineConfig({
         admin: resolve(__dirname, 'admin.html'),
         charts: resolve(__dirname, 'charts.html'),
         metricHistory: resolve(__dirname, 'metric-history.html'),
+        superadmin: resolve(__dirname, 'superadmin.html'),
         tracker: resolve(__dirname, 'tracker.html'),
         landmark: resolve(__dirname, 'landmark.html'),
         policy: resolve(__dirname, 'policy.html')
