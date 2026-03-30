@@ -1,10 +1,11 @@
-import { observeAuth, logout, changePassword, getUserProfile, isAdmin } from "./auth.js";
+import { observeAuth, logout, changePassword, getUserProfile, isSuperAdmin, getAdminRoleLabel, canAccessAdminWorkspace } from "./auth.js";
 import { initI18n, t } from "./i18n.js";
 import { showToast } from "./ui.js";
 import { registerServiceWorker } from "./pwa.js";
 import { initAdmin } from "./admin.js";
 import { initRevealAnimations } from "./motion.js";
 import { initAdminEmergencyNotifications } from "./admin-emergency-notifications.js";
+import { setSuperAdminNavVisible } from "./role-nav.js";
 
 const themeToggle = document.getElementById("themeToggle");
 const menuToggle = document.getElementById("menuToggle");
@@ -50,8 +51,8 @@ function renderIdentity(identity) {
   currentIdentity = identity;
   if (adminUsername) adminUsername.textContent = identity?.username || "--";
   if (adminEmail) adminEmail.textContent = identity?.email || "--";
-  if (adminRole) adminRole.textContent = t("administrator_role");
-  if (adminWorkspaceStatus) adminWorkspaceStatus.textContent = t("admin_subtitle");
+  if (adminRole) adminRole.textContent = identity?.roleLabel || t("administrator_role");
+  if (adminWorkspaceStatus) adminWorkspaceStatus.textContent = identity?.workspaceNote || t("admin_subtitle");
 }
 
 async function triggerPasswordReset() {
@@ -138,19 +139,28 @@ window.addEventListener("language-changed", () => {
 });
 
 observeAuth(async (user) => {
-  if (!user || !isAdmin(user)) {
+  if (!user || !canAccessAdminWorkspace(user)) {
     window.location.href = "profile.html";
     return;
   }
+  setSuperAdminNavVisible(isSuperAdmin(user));
 
   try {
     const profile = await getUserProfile(user.uid);
+    const roleLabel = getAdminRoleLabel(user);
     const identity = {
       username:
         profile?.username ||
         user.displayName ||
         (user.email ? user.email.split("@")[0] : t("administrator_role")),
       email: profile?.email || user.email || "--",
+      roleLabel,
+      workspaceNote:
+        roleLabel === "Content Admin"
+          ? "Content Admin workspace for posts, editing, and moderation."
+          : roleLabel === "Landmark Admin"
+            ? "Landmark Admin workspace for map entries and landmark records."
+            : "Super Admin workspace with full access.",
     };
     renderIdentity(identity);
     await initAdmin(user);
