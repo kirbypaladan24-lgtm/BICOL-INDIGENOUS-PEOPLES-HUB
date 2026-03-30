@@ -1225,9 +1225,9 @@ const translationAdditions = {
     tracker_list_note: "This list updates whenever a user shares again from a new place.",
     tracker_empty: "No user locations have been shared yet.",
     emergency_details: "Emergency Details",
-    selected_location_response: "Selected location response",
+    selected_location_response: "Selected location",
     tracker_detail_note: "Click a warning marker or a user card to review the report and send an admin response.",
-    tracker_detail_empty: "Choose a shared location to review it.",
+    tracker_detail_empty: "Select a shared location to review it.",
     user_label: "User",
     phone_label: "Phone",
     coordinates_label: "Coordinates",
@@ -1277,7 +1277,7 @@ const translationAdditions = {
     tracker_response_sent: "Emergency response sent successfully.",
     tracker_response_failed: "Could not send the emergency response.",
     metric_history_top_label: "Indicator History",
-    data_charts_subtitle: "See what is happening across posts, users, engagement, and landmarks in one view.",
+    data_charts_subtitle: "Track posts, users, landmarks, and alerts in one view.",
     date_range_label: "Date range",
     range_7_days: "7 days",
     range_30_days: "30 days",
@@ -1296,7 +1296,7 @@ const translationAdditions = {
     emergency_alerts_over_time: "Emergency alerts over time",
     metric_history_eyebrow: "Records",
     metric_history_title: "Indicator details",
-    metric_history_note: "Review the records behind this dashboard indicator.",
+    metric_history_note: "Review the records behind this indicator.",
     metric_history_posts_note: "These are the posts currently counted in the dashboard total.",
     metric_history_users_note: "These are the user accounts currently counted in the dashboard total.",
     metric_history_landmarks_note: "These are the mapped landmark records currently stored in the hub.",
@@ -1311,7 +1311,7 @@ const translationAdditions = {
     dislikes_label: "Dislikes",
     chart_empty: "No chart data yet.",
     top_performing_posts: "Top Performing Posts",
-    top_posts_subtitle: "Ranked by total likes and dislikes on posts within the selected range.",
+    top_posts_subtitle: "Ranked by total reactions in the selected range.",
     top_posts_empty: "No posts found for this range.",
     restricted: "Restricted",
     story_editor: "Story Editor",
@@ -1480,7 +1480,6 @@ const translationAdditions = {
     user_locations_map: "Mapa ng mga Lokasyon ng User",
     tracker_map_note: "Tanging mga user na pumayag sa location sharing at nag-sync ng pinakabagong lokasyon ang makikita rito.",
     tracker_search_label: "Maghanap ayon sa username o email",
-    search: "Maghanap",
     tracker_search_placeholder: "Mag-type ng username o email",
     admin_location: "Lokasyon ng Admin",
     finding_current_location: "Hinahanap ang kasalukuyan mong lokasyon...",
@@ -1493,9 +1492,9 @@ const translationAdditions = {
     tracker_list_note: "Nag-a-update ang listahang ito tuwing muling nagbabahagi ang user mula sa ibang lugar.",
     tracker_empty: "Wala pang user na nagbahagi ng lokasyon.",
     emergency_details: "Detalye ng Emergency",
-    selected_location_response: "Tugon sa napiling lokasyon",
+    selected_location_response: "Napiling lokasyon",
     tracker_detail_note: "I-click ang warning marker o user card para makita ang ulat at makapagpadala ng tugon ang admin.",
-    tracker_detail_empty: "Pumili ng shared na lokasyon para makita ito.",
+    tracker_detail_empty: "Pumili ng shared na lokasyon para suriin ito.",
     user_label: "User",
     phone_label: "Telepono",
     coordinates_label: "Koordinada",
@@ -1545,7 +1544,7 @@ const translationAdditions = {
     tracker_response_sent: "Matagumpay na naipadala ang tugon sa emergency.",
     tracker_response_failed: "Hindi maipadala ang tugon sa emergency.",
     metric_history_top_label: "Kasaysayan ng Indicator",
-    data_charts_subtitle: "Tingnan kung ano ang nangyayari sa mga post, user, engagement, at landmark sa iisang view.",
+    data_charts_subtitle: "Subaybayan ang mga post, user, landmark, at alerto sa iisang view.",
     date_range_label: "Saklaw ng petsa",
     range_7_days: "7 araw",
     range_30_days: "30 araw",
@@ -1564,7 +1563,7 @@ const translationAdditions = {
     emergency_alerts_over_time: "Mga emergency alert sa paglipas ng panahon",
     metric_history_eyebrow: "Mga Tala",
     metric_history_title: "Detalye ng indicator",
-    metric_history_note: "Tingnan ang mga record sa likod ng dashboard indicator na ito.",
+    metric_history_note: "Tingnan ang mga record sa likod ng indicator na ito.",
     metric_history_posts_note: "Ito ang mga post na kasalukuyang kasama sa kabuuang bilang ng dashboard.",
     metric_history_users_note: "Ito ang mga user account na kasalukuyang kasama sa kabuuang bilang ng dashboard.",
     metric_history_landmarks_note: "Ito ang mga landmark record na kasalukuyang naka-save sa hub.",
@@ -1579,7 +1578,7 @@ const translationAdditions = {
     dislikes_label: "Dislike",
     chart_empty: "Wala pang data para sa chart.",
     top_performing_posts: "Pinakamagagandang Post",
-    top_posts_subtitle: "Niraranggo batay sa kabuuang like at dislike ng mga post sa napiling saklaw.",
+    top_posts_subtitle: "Niraranggo batay sa kabuuang reaksyon sa napiling saklaw.",
     top_posts_empty: "Walang post para sa saklaw na ito.",
     restricted: "Pinaghihigpitan",
     story_editor: "Story Editor",
@@ -1757,9 +1756,9 @@ const translationAdditions = {
     tracker_list_note: "An listahang ini nag-uupdate kun muling nagbabahagi an user hale sa ibang lugar.",
     tracker_empty: "Mayong user na nagbahagi pa nin lokasyon.",
     emergency_details: "Detalye nin Emergency",
-    selected_location_response: "Tugon sa piniling lokasyon",
+    selected_location_response: "Piniling lokasyon",
     tracker_detail_note: "I-click an warning marker o user card para mahiling an ulat asin makapadara nin tugon an admin.",
-    tracker_detail_empty: "Pumili nin shared na lokasyon para mahiling ini.",
+    tracker_detail_empty: "Pumili nin shared na lokasyon para masuri ini.",
     user_label: "User",
     phone_label: "Telepono",
     coordinates_label: "Koordinada",
@@ -1809,7 +1808,7 @@ const translationAdditions = {
     tracker_response_sent: "Matagumpay na naipadara an tugon sa emergency.",
     tracker_response_failed: "Dai naipadara an tugon sa emergency.",
     metric_history_top_label: "Kasaysayan nin Indicator",
-    data_charts_subtitle: "Hilingon kung ano an nangyayari sa mga post, user, engagement, asin landmark sa sarong view.",
+    data_charts_subtitle: "Subayon an mga post, user, landmark, asin alerto sa sarong view.",
     date_range_label: "Sakop nin petsa",
     range_7_days: "7 aldaw",
     range_30_days: "30 aldaw",
@@ -1830,7 +1829,7 @@ const translationAdditions = {
     dislikes_label: "Dislike",
     chart_empty: "Mayong data para sa chart pa.",
     top_performing_posts: "Pinakaepektibong mga Post",
-    top_posts_subtitle: "Niraranggo base sa kabuuang like asin dislike nin mga post sa piniling sakop.",
+    top_posts_subtitle: "Niraranggo base sa kabuuang reaksyon sa piniling sakop.",
     top_posts_empty: "Mayong post para sa sakop na ini.",
     restricted: "Restricted",
     story_editor: "Story Editor",
@@ -2138,9 +2137,9 @@ Object.assign(translationAdditions.bisakol, {
   tracker_list_note: "Kini nga listahan mausab kung ang user moshare pag-usab gikan sa laing lugar.",
   tracker_empty: "Wala pay user nga nakashare og lokasyon.",
   emergency_details: "Detalye sa Emergency",
-  selected_location_response: "Tubag sa napiling lokasyon",
+  selected_location_response: "Napiling lokasyon",
   tracker_detail_note: "I-click ang warning marker o user card aron makita ang report ug makapadala ang admin og tubag.",
-  tracker_detail_empty: "Pilia ang shared nga lokasyon aron makita kini.",
+  tracker_detail_empty: "Pilia ang shared nga lokasyon aron masusi kini.",
   user_label: "User",
   phone_label: "Telepono",
   coordinates_label: "Koordinada",
@@ -2190,7 +2189,7 @@ Object.assign(translationAdditions.bisakol, {
   tracker_response_sent: "Malampusong naipadala ang tubag sa emergency.",
   tracker_response_failed: "Napakyas ang pagpadala sa tubag sa emergency.",
   metric_history_top_label: "Kasaysayan sa Indicator",
-  data_charts_subtitle: "Tan-awa kung unsay nahitabo sa mga post, user, engagement, ug landmark sa usa ka view.",
+  data_charts_subtitle: "Subaya ang mga post, user, landmark, ug alerto sa usa ka view.",
   date_range_label: "Sakop sa petsa",
   range_7_days: "7 ka adlaw",
   range_30_days: "30 ka adlaw",
@@ -2211,7 +2210,7 @@ Object.assign(translationAdditions.bisakol, {
   dislikes_label: "Dislikes",
   chart_empty: "Wala pay chart data.",
   top_performing_posts: "Mga Nangunang Post",
-  top_posts_subtitle: "Gihan-ay base sa total likes ug dislikes sa mga post sulod sa piniling range.",
+  top_posts_subtitle: "Gihan-ay base sa total reaksyon sa piniling range.",
   top_posts_empty: "Walay post para niini nga range.",
   restricted: "Restricted",
   story_editor: "Story Editor",
@@ -2301,6 +2300,92 @@ Object.assign(translationAdditions.bisakol, {
 
 Object.keys(translationAdditions).forEach((lang) => {
   Object.assign(translations[lang], translationAdditions[lang]);
+});
+
+const policySectionTranslations = {
+  en: {
+    policy_intro_html:
+      '<p>This Privacy & Content Policy explains how the Bicol Indigenous Peoples Hub collects, uses, stores, reviews, and protects information shared through this platform. It applies to public visitors, registered users, contributors, administrators, and the super admin workspace.</p><p class="policy-meta">Last updated: March 30, 2026</p>',
+    policy_data_collected_html:
+      "<h3>Data We Collect</h3><ul><li>Account information such as username, email address, phone number, and birthdate provided during registration or profile setup.</li><li>Community content such as posts, images, landmark entries, summaries, comments built into submissions, and moderation-related updates.</li><li>Location-sharing records when a user chooses to share a location, including coordinates, update time, and device-reported accuracy.</li><li>Emergency alert records, including the message, proof image, response status, admin notes, and alert history used for follow-up and review.</li><li>Operational records such as admin activity logs, role assignments, authentication state, and basic local browser preferences like theme, language, and policy acknowledgement.</li></ul>",
+    policy_use_of_data_html:
+      "<h3>How We Use Data</h3><ul><li>To create and secure user accounts, support login, and manage password-protected access.</li><li>To publish, display, organize, and moderate stories, landmarks, and community contributions.</li><li>To support emergency coordination, show shared user locations to authorized admins, and record admin responses for accountability.</li><li>To maintain charts, history pages, and operational oversight inside the admin and super admin workspaces.</li><li>To improve reliability, prevent abuse, and keep the platform respectful, accurate, and usable.</li></ul>",
+    policy_location_emergency_html:
+      "<h3>Location Sharing & Emergency Alerts</h3><ul><li>Location sharing is opt-in. A user must agree before their location is stored for admin tracking.</li><li>The latest shared location can replace the previous shared location for the same account when the user shares again from a new place.</li><li>Emergency alerts require a written report and image proof before they can be submitted.</li><li>Shared user locations and emergency details are intended for authorized admin response and platform safety operations only.</li><li>Admin responses, timestamps, and emergency history may remain in system records for review, governance, and incident follow-up.</li></ul>",
+    policy_content_governance_html:
+      "<h3>Content Governance</h3><ul><li>All contributions must be respectful, culturally sensitive, and reasonably accurate.</li><li>Users must not upload content they do not own, do not have permission to share, or that exposes sacred, private, or harmful information without proper consent.</li><li>Harassment, hate speech, fraudulent information, impersonation, and abusive conduct are not allowed.</li><li>Authorized admins may review, edit, restrict, or remove content that violates platform rules or creates risk for communities and users.</li><li>Contributors keep ownership of their original submissions while allowing the platform to display and archive them for educational, community, and stewardship purposes.</li></ul>",
+    policy_security_retention_html:
+      "<h3>Security & Retention</h3><ul><li>We use role-based access, account authentication, and restricted admin tools to limit who can view or act on sensitive information.</li><li>Some account, emergency, and admin-operation records may be retained as long as they are needed for platform operation, moderation, audit review, or lawful obligations.</li><li>Temporary interface preferences such as theme, language, and certain consent or session-related states may be stored in the local browser.</li><li>We do not sell personal data for advertising or unrelated commercial marketing.</li><li>No internet platform can promise absolute security, so we also rely on responsible user behavior, secure credentials, and admin oversight.</li></ul>",
+    policy_user_rights_html:
+      "<h3>Your Rights</h3><ul><li>You may request access to the personal information associated with your account.</li><li>You may ask for corrections if your account details or submitted records are inaccurate.</li><li>You may request deletion or review of content or personal data, subject to safety, audit, legal, or moderation needs.</li><li>You may raise concerns about content misuse, location-sharing concerns, emergency records, or unauthorized disclosure.</li><li>You may stop participating in location sharing by no longer choosing to share, and you may contact us for record review if needed.</li></ul>",
+    policy_contact_html:
+      '<h3>Contact & Requests</h3><p>For privacy concerns, content reports, correction requests, removal requests, or questions about community stewardship, contact the platform team through:</p><p><a href="mailto:bicolindigenouspeopleshub@gmail.com">bicolindigenouspeopleshub@gmail.com</a></p><p>We aim to review reports and requests in a reasonable time based on the nature of the issue and the records involved.</p>',
+  },
+  tl: {
+    policy_intro_html:
+      '<p>Ipinapaliwanag ng Patakaran sa Privacy at Nilalaman na ito kung paano nangongolekta, gumagamit, nag-iingat, nagsusuri, at nagpoprotekta ng impormasyon ang Bicol Indigenous Peoples Hub. Saklaw nito ang mga bisita, rehistradong user, kontribyutor, admin, at super admin ng platform.</p><p class="policy-meta">Huling update: Marso 30, 2026</p>',
+    policy_data_collected_html:
+      "<h3>Mga Datos na Kinokolekta</h3><ul><li>Impormasyon ng account gaya ng username, email address, numero ng telepono, at birthdate na ibinibigay sa registration o profile setup.</li><li>Mga community content gaya ng posts, larawan, landmark entries, buod, at mga update na may kinalaman sa moderation.</li><li>Mga lokasyong ibinabahagi ng user kapag kusang pumayag siyang mag-share, kabilang ang coordinates, oras ng update, at reported accuracy ng device.</li><li>Mga emergency alert record gaya ng mensahe, image proof, response status, admin notes, at history ng alert para sa follow-up at review.</li><li>Mga operational record gaya ng admin activity logs, role assignments, authentication state, at lokal na browser preferences tulad ng theme, language, at policy acknowledgement.</li></ul>",
+    policy_use_of_data_html:
+      "<h3>Paano Ginagamit ang Datos</h3><ul><li>Para gumawa at mag-secure ng user accounts, suportahan ang login, at pamahalaan ang may password na access.</li><li>Para ilathala, ipakita, ayusin, at i-moderate ang mga kuwento, landmark, at ambag ng komunidad.</li><li>Para suportahan ang emergency coordination, ipakita ang shared user locations sa mga awtorisadong admin, at itala ang admin responses para sa accountability.</li><li>Para mapatakbo ang charts, history pages, at operational oversight sa admin at super admin workspaces.</li><li>Para mapahusay ang reliability, maiwasan ang abuso, at mapanatiling magalang, tumpak, at maayos ang platform.</li></ul>",
+    policy_location_emergency_html:
+      "<h3>Location Sharing at Emergency Alerts</h3><ul><li>Boluntaryo ang location sharing. Kailangang pumayag muna ang user bago mai-save ang kanyang lokasyon para sa admin tracking.</li><li>Kapag nag-share muli ang user mula sa ibang lugar, maaaring mapalitan ng pinakabagong lokasyon ang naunang shared location ng parehong account.</li><li>Kinakailangan ang written report at image proof bago maisumite ang emergency alert.</li><li>Ang shared user locations at emergency details ay para lamang sa awtorisadong admin response at safety operations ng platform.</li><li>Ang admin responses, timestamps, at emergency history ay maaaring manatili sa system records para sa review, governance, at incident follow-up.</li></ul>",
+    policy_content_governance_html:
+      "<h3>Pamamahala sa Nilalaman</h3><ul><li>Lahat ng ambag ay dapat magalang, sensitibo sa kultura, at makatwirang tumpak.</li><li>Hindi dapat mag-upload ng content na hindi pagmamay-ari, walang pahintulot na ibahagi, o naglalantad ng sagrado, pribado, o mapanganib na impormasyon nang walang wastong pahintulot.</li><li>Bawal ang harassment, hate speech, mapanlinlang na impormasyon, pagpapanggap, at mapang-abusong asal.</li><li>Maaaring suriin, i-edit, limitahan, o tanggalin ng mga awtorisadong admin ang nilalamang lumalabag sa mga patakaran o nagdudulot ng panganib sa komunidad at mga user.</li><li>Nananatili sa kontribyutor ang pagmamay-ari ng orihinal na isinumite, ngunit pinapahintulutan ang platform na ipakita at i-archive ito para sa edukasyon, komunidad, at stewardship.</li></ul>",
+    policy_security_retention_html:
+      "<h3>Seguridad at Retention</h3><ul><li>Gumagamit kami ng role-based access, account authentication, at restricted admin tools upang limitahan kung sino ang maaaring makakita o makakilos sa sensitibong impormasyon.</li><li>Ang ilang account, emergency, at admin-operation records ay maaaring panatilihin hangga't kailangan para sa operasyon ng platform, moderation, audit review, o legal na obligasyon.</li><li>Ang pansamantalang interface preferences tulad ng theme, language, at ilang consent o session-related states ay maaaring maiimbak sa local browser.</li><li>Hindi namin ibinebenta ang personal data para sa advertising o hindi kaugnay na komersyal na marketing.</li><li>Walang internet platform ang makapangangako ng ganap na seguridad, kaya umaasa rin kami sa responsableng paggamit, ligtas na credentials, at maingat na admin oversight.</li></ul>",
+    policy_user_rights_html:
+      "<h3>Iyong mga Karapatan</h3><ul><li>Maaari kang humiling ng access sa personal na impormasyong kaugnay ng iyong account.</li><li>Maaari kang humiling ng pagwawasto kung mali ang detalye ng iyong account o isinumiteng records.</li><li>Maaari kang humiling ng pagbura o review ng content o personal data, depende sa safety, audit, legal, o moderation needs.</li><li>Maaari kang mag-ulat ng pang-aabuso sa content, concerns sa location sharing, emergency records, o hindi awtorisadong pagbubunyag ng impormasyon.</li><li>Maaari mong itigil ang location sharing sa pamamagitan ng hindi na muling pag-share ng lokasyon, at maaari kang makipag-ugnayan sa amin para sa review ng records kung kinakailangan.</li></ul>",
+    policy_contact_html:
+      '<h3>Kontak at mga Kahilingan</h3><p>Para sa privacy concerns, content reports, correction requests, removal requests, o mga tanong tungkol sa community stewardship, makipag-ugnayan sa platform team sa pamamagitan ng:</p><p><a href="mailto:bicolindigenouspeopleshub@gmail.com">bicolindigenouspeopleshub@gmail.com</a></p><p>Sisikapin naming suriin ang mga ulat at kahilingan sa makatwirang panahon batay sa uri ng isyu at sa mga kasangkot na records.</p>',
+  },
+  bcl_central: {
+    policy_intro_html:
+      '<p>Ipinapaliwanag kaining Patakaran sa Privacy asin Nilalaman kun paano nagkokolekta, nagagamit, nag-iingat, nagsusuri, asin nagproprotektar nin impormasyon an Bicol Indigenous Peoples Hub. Sakop kaini an mga bisita, rehistradong user, kontribyutor, admin, asin super admin nin plataporma.</p><p class="policy-meta">Uring update: Marso 30, 2026</p>',
+    policy_data_collected_html:
+      "<h3>Mga Datos na Kinokolekta</h3><ul><li>Impormasyon nin account arog kan username, email address, numero nin telepono, asin birthdate na ibinibigay sa registration o profile setup.</li><li>Mga community content arog kan posts, larawan, landmark entries, buod, asin mga update na may koneksyon sa moderation.</li><li>Mga lokasyong ibinabahagi nin user kun kusang napayag siyang mag-share, kaiba an coordinates, oras nin update, asin reported accuracy kan device.</li><li>Mga emergency alert record arog kan mensahe, image proof, response status, admin notes, asin history nin alert para sa follow-up asin review.</li><li>Mga operational record arog kan admin activity logs, role assignments, authentication state, asin lokal na browser preferences gaya kan theme, language, asin policy acknowledgement.</li></ul>",
+    policy_use_of_data_html:
+      "<h3>Paano Ginagamit an Datos</h3><ul><li>Para makagawa asin maseguro an user accounts, masuportahan an login, asin mamahalaan an may password na access.</li><li>Para maipublikar, maipahiling, maayos, asin ma-moderate an mga istorya, landmark, asin ambag nin komunidad.</li><li>Para masuportahan an emergency coordination, maipahiling an shared user locations sa mga awtorisadong admin, asin maitala an admin responses para sa accountability.</li><li>Para mapatakbo an charts, history pages, asin operational oversight sa admin asin super admin workspaces.</li><li>Para mapahusay an reliability, malikayan an abuso, asin mapanatiling magalang, tama, asin maayos an plataporma.</li></ul>",
+    policy_location_emergency_html:
+      "<h3>Location Sharing asin Emergency Alerts</h3><ul><li>Boluntaryo an location sharing. Kaipuhan munang pumayag an user bago mai-save an saiyang lokasyon para sa admin tracking.</li><li>Kun mag-share giraray an user hale sa ibang lugar, puwedeng mapalitan kan pinakabagong lokasyon an naunang shared location kan parehong account.</li><li>Kaipuhan an written report asin image proof bago maipasa an emergency alert.</li><li>An shared user locations asin emergency details para sana sa awtorisadong admin response asin safety operations kan plataporma.</li><li>An admin responses, timestamps, asin emergency history puwedeng magpadagos sa system records para sa review, governance, asin incident follow-up.</li></ul>",
+    policy_content_governance_html:
+      "<h3>Pamamahala sa Nilalaman</h3><ul><li>An gabos na ambag dapat magalang, sensitibo sa kultura, asin makatuwirang tama.</li><li>Dai dapat mag-upload nin content na dai saimo, mayo kang pahintulot na ibahagi, o nagpapahiling nin sagrado, pribado, o delikadong impormasyon na mayo nin wastong pahintulot.</li><li>Bawal an harassment, hate speech, maling impormasyon na sinasadyang ikalat, pagpapanggap, asin mapang-abusong asal.</li><li>Puwedeng suriin, i-edit, limitahan, o tanggalon kan mga awtorisadong admin an nilalamang lumalabag sa patakaran o nagdudulot nin panganib sa komunidad asin mga user.</li><li>Nananatili sa kontribyutor an pagmamay-ari kan orihinal na isinumite, alagad pinapahintulutan an plataporma na ipahiling asin i-archive ini para sa edukasyon, komunidad, asin stewardship.</li></ul>",
+    policy_security_retention_html:
+      "<h3>Seguridad asin Retention</h3><ul><li>Naggagamit kami nin role-based access, account authentication, asin restricted admin tools para malimitahan kun sisay an puwedeng makakita o makakilos sa sensitibong impormasyon.</li><li>An siring na account, emergency, asin admin-operation records puwedeng mapadagos habang kaipuhan para sa operasyon kan plataporma, moderation, audit review, o legal na obligasyon.</li><li>An temporary interface preferences gaya kan theme, language, asin ibang consent o session-related states puwedeng maiimbak sa local browser.</li><li>Dai mi ipinagbibili an personal data para sa advertising o dai kaugnay na komersyal na marketing.</li><li>Mayong internet platform an makakapangako nin lubos na seguridad, kaya nag-aasa man kami sa responsableng paggamit, ligtas na credentials, asin maingat na admin oversight.</li></ul>",
+    policy_user_rights_html:
+      "<h3>Mga Karapatan Mo</h3><ul><li>Puwede kang humiling nin access sa personal na impormasyong konektado sa saimong account.</li><li>Puwede kang humiling nin pagwasto kun mali an detalye kan saimong account o isinumiteng records.</li><li>Puwede kang humiling nin pagbura o review kan content o personal data, depende sa safety, audit, legal, o moderation needs.</li><li>Puwede kang mag-ulat nin pang-aabuso sa content, concerns sa location sharing, emergency records, o dai awtorisadong pagbulgar nin impormasyon.</li><li>Puwede mong itugot an pag-untok sa location sharing sa paagi nin dai na mag-share giraray nin lokasyon, asin puwede kang makipag-ugnayan sa amuya para sa review kan records kun kaipuhan.</li></ul>",
+    policy_contact_html:
+      '<h3>Kontak asin mga Kahilingan</h3><p>Para sa privacy concerns, content reports, correction requests, removal requests, o mga hapot manungod sa community stewardship, makipag-ugnayan sa platform team sa paagi nin:</p><p><a href="mailto:bicolindigenouspeopleshub@gmail.com">bicolindigenouspeopleshub@gmail.com</a></p><p>Sisikapon mi na masuri an mga ulat asin kahilingan sa makatuwirang panahon depende sa klase nin isyu asin sa mga kasaling records.</p>',
+  },
+  bcl_rinconada: {},
+  bcl_albay: {},
+  bcl_catanduanes_north: {},
+  bisakol: {
+    policy_intro_html:
+      '<p>Kining Patakaran sa Privacy ug Sulod nagpasabot kon giunsa sa Bicol Indigenous Peoples Hub ang pagkolekta, paggamit, pagtipig, pagrepaso, ug pagpanalipod sa impormasyon sa plataporma. Sakop niini ang mga bisita, rehistradong user, kontribyutor, admin, ug super admin.</p><p class="policy-meta">Kataposang update: Marso 30, 2026</p>',
+    policy_data_collected_html:
+      "<h3>Mga Datos nga Gikolekta</h3><ul><li>Impormasyon sa account sama sa username, email address, numero sa telepono, ug birthdate nga gihatag sa registration o profile setup.</li><li>Mga sulod sa komunidad sama sa posts, hulagway, landmark entries, summary, ug mga update nga may kalabotan sa moderation.</li><li>Mga lokasyon nga gipaambit sa user kon boluntaryo siyang miuyon sa pag-share, apil ang coordinates, oras sa update, ug reported accuracy sa device.</li><li>Mga emergency alert record sama sa mensahe, image proof, response status, admin notes, ug history sa alerto para sa follow-up ug review.</li><li>Mga operational record sama sa admin activity logs, role assignments, authentication state, ug lokal nga browser preferences sama sa theme, language, ug policy acknowledgement.</li></ul>",
+    policy_use_of_data_html:
+      "<h3>Giunsa Paggamit ang Datos</h3><ul><li>Aron makahimo ug makaseguro sa user accounts, mosuporta sa login, ug modumala sa password-protected nga access.</li><li>Aron ma-publish, maipakita, maorganisa, ug ma-moderate ang mga istorya, landmark, ug ambag sa komunidad.</li><li>Aron masuportahan ang emergency coordination, maipakita ang shared user locations sa mga awtorisadong admin, ug marekord ang admin responses para sa accountability.</li><li>Aron mapadagan ang charts, history pages, ug operational oversight sa admin ug super admin workspaces.</li><li>Aron mapalig-on ang reliability, malikayan ang abuso, ug mapabiling matinahuron, tukma, ug organisado ang plataporma.</li></ul>",
+    policy_location_emergency_html:
+      "<h3>Location Sharing ug Emergency Alerts</h3><ul><li>Boluntaryo ang location sharing. Kinahanglan nga mouyon una ang user sa dili pa matipigan ang iyang lokasyon para sa admin tracking.</li><li>Kon moshare pag-usab ang user gikan sa laing lugar, ang pinakabag-ong lokasyon maoy mopuli sa daang shared location sa parehong account.</li><li>Kinahanglan ang written report ug image proof sa dili pa ma-submit ang emergency alert.</li><li>Ang shared user locations ug emergency details para ra sa awtorisadong admin response ug safety operations sa plataporma.</li><li>Ang admin responses, timestamps, ug emergency history mahimong magpabilin sa system records para sa review, governance, ug incident follow-up.</li></ul>",
+    policy_content_governance_html:
+      "<h3>Pagdumala sa Sulod</h3><ul><li>Ang tanang ambag kinahanglan matinahuron, sensitibo sa kultura, ug makatarunganong tukma.</li><li>Dili angay mag-upload og sulod nga dili imo, walay pagtugot sa pagbahin, o nagpagawas og sagrado, pribado, o delikadong impormasyon nga walay hustong pagtugot.</li><li>Bawal ang harassment, hate speech, maling impormasyon nga tinuyo, pagpanglimbong sa identidad, ug mapang-abusong pamatasan.</li><li>Ang mga awtorisadong admin mahimong mosusi, mo-edit, mo-restrict, o motangtang sa sulod nga naglapas sa patakaran o nagdala og risgo sa komunidad ug mga user.</li><li>Nagpabilin sa kontribyutor ang pagpanag-iya sa orihinal nga isinumite, pero gitugotan ang plataporma sa pagpakita ug pag-archive niini para sa edukasyon, komunidad, ug stewardship.</li></ul>",
+    policy_security_retention_html:
+      "<h3>Seguridad ug Retention</h3><ul><li>Naggamit kami og role-based access, account authentication, ug restricted admin tools aron malimitahan kinsa ang makakita o makalihok sa sensitibong impormasyon.</li><li>Ang pipila ka account, emergency, ug admin-operation records mahimong tipigan samtang gikinahanglan para sa operasyon sa plataporma, moderation, audit review, o legal nga obligasyon.</li><li>Ang temporary interface preferences sama sa theme, language, ug pipila ka consent o session-related states mahimong matipigan sa local browser.</li><li>Dili namo gibaligya ang personal data para sa advertising o dili may kalabutan nga komersyal nga marketing.</li><li>Walay internet platform nga makasaad og hingpit nga seguridad, mao nga nagsalig usab kami sa responsableng paggamit, luwas nga credentials, ug maampingong admin oversight.</li></ul>",
+    policy_user_rights_html:
+      "<h3>Imong mga Katungod</h3><ul><li>Mahimo kang mangayo og access sa personal nga impormasyong konektado sa imong account.</li><li>Mahimo kang mangayo og pagtul-id kon sayop ang detalye sa imong account o isinumiteng records.</li><li>Mahimo kang mangayo og deletion o review sa content o personal data, depende sa safety, audit, legal, o moderation needs.</li><li>Mahimo kang moreport sa content misuse, concerns sa location sharing, emergency records, o dili awtorisadong pagbulgar sa impormasyon.</li><li>Mahimo nimong undangon ang location sharing pinaagi sa dili na pagshare pag-usab sa lokasyon, ug mahimo kang mokontak kanamo para sa review sa records kon gikinahanglan.</li></ul>",
+    policy_contact_html:
+      '<h3>Kontak ug mga Hangyo</h3><p>Para sa privacy concerns, content reports, correction requests, removal requests, o mga pangutana kabahin sa community stewardship, pakigkontak sa platform team pinaagi sa:</p><p><a href="mailto:bicolindigenouspeopleshub@gmail.com">bicolindigenouspeopleshub@gmail.com</a></p><p>Tinguhaon namo nga masusi ang mga report ug hangyo sa makatarunganong panahon base sa klase sa isyu ug sa mga rekord nga nalambigit.</p>',
+  },
+};
+
+policySectionTranslations.bcl_rinconada = { ...policySectionTranslations.bcl_central };
+policySectionTranslations.bcl_albay = { ...policySectionTranslations.bcl_central };
+policySectionTranslations.bcl_catanduanes_north = { ...policySectionTranslations.bcl_central };
+
+Object.keys(policySectionTranslations).forEach((lang) => {
+  Object.assign(translations[lang], policySectionTranslations[lang]);
 });
 
 // ==========================================
