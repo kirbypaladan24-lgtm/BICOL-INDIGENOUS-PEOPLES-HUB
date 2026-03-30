@@ -38,11 +38,13 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 import { assertFirebaseConfig } from "./firebase-config.js";
 
-const ADMIN_UIDS = new Set([
+export const SUPER_ADMIN_UID = "6bs7TaQnJBZDGiyhR1eoDMLncsb2";
+export const ADMIN_OPERATOR_UIDS = [
   "7gquSWQ94xZZLMxLCW4Xlv2QJ613",
   "L6aGCzr08Wd4gcj6ndiAqa0Z5dx2",
   "TI0yeuCaYcggEJmjh7H4BlAmp562",
-]);
+];
+const ADMIN_UIDS = new Set(ADMIN_OPERATOR_UIDS);
 
 const firebaseConfig = assertFirebaseConfig();
 const app = initializeApp(firebaseConfig);
@@ -195,9 +197,13 @@ export async function createAccountWithProfile({ email, password, username, phon
   }
 }
 
+export function isSuperAdmin(user) {
+  return Boolean(user?.uid) && user.uid === SUPER_ADMIN_UID;
+}
+
 export function isAdmin(user) {
   if (!user) return false;
-  return ADMIN_UIDS.has(user.uid);
+  return isSuperAdmin(user) || ADMIN_UIDS.has(user.uid);
 }
 
 const postsRef = collection(db, "posts");
@@ -205,6 +211,7 @@ const landmarksRef = collection(db, "landmarks");
 const postReactionsRef = collection(db, "post_reactions");
 const sharedLocationsRef = collection(db, "shared_locations");
 const emergencyAlertsRef = collection(db, "emergency_alerts");
+const adminActivityLogsRef = collection(db, "admin_activity_logs");
 const statsRef = doc(db, "stats", "public");
 
 function getReactionDocRef(uid, postId) {
@@ -217,6 +224,58 @@ function getSharedLocationDocRef(uid) {
 
 function getPrivateUserDocRef(uid) {
   return doc(db, "users_private", uid);
+}
+
+async function getCurrentAdminIdentity(user = auth.currentUser) {
+  if (!user?.uid || !isAdmin(user)) return null;
+
+  let profile = null;
+  try {
+    profile = await getUserProfile(user.uid);
+  } catch (error) {
+    console.warn("Could not load admin profile for activity log:", error);
+  }
+
+  return {
+    uid: user.uid,
+    email: profile?.email || user.email || null,
+    name:
+      profile?.username ||
+      user.displayName ||
+      (user.email ? user.email.split("@")[0] : isSuperAdmin(user) ? "Super Admin" : "Admin"),
+    role: isSuperAdmin(user) ? "super_admin" : "admin",
+  };
+}
+
+export async function logAdminActivity({
+  actionType,
+  targetType,
+  targetId = null,
+  targetLabel = null,
+  summary = "",
+} = {}) {
+  const user = auth.currentUser;
+  if (!user?.uid || user.isAnonymous || !isAdmin(user)) return null;
+
+  const identity = await getCurrentAdminIdentity(user);
+  if (!identity) return null;
+
+  const trimmedActionType = String(actionType || "").trim();
+  const trimmedTargetType = String(targetType || "").trim();
+  if (!trimmedActionType || !trimmedTargetType) return null;
+
+  return addDoc(adminActivityLogsRef, {
+    actorUid: identity.uid,
+    actorEmail: identity.email || null,
+    actorName: identity.name,
+    actorRole: identity.role,
+    actionType: trimmedActionType,
+    targetType: trimmedTargetType,
+    targetId: targetId ? String(targetId) : null,
+    targetLabel: targetLabel ? String(targetLabel).slice(0, 200) : null,
+    summary: String(summary || "").slice(0, 2000),
+    createdAt: serverTimestamp(),
+  });
 }
 
 async function hydrateSharedLocation(entry) {
@@ -554,6 +613,8 @@ export async function respondToEmergency(userId, { status, reason = "" }) {
     throw new Error("A reason is required when declining an emergency report.");
   }
 
+  const targetLocation = await fetchSharedLocation(userId, false).catch(() => null);
+
   await setDoc(
     getSharedLocationDocRef(userId),
     {
@@ -566,6 +627,19 @@ export async function respondToEmergency(userId, { status, reason = "" }) {
     },
     { merge: true }
   );
+
+  await logAdminActivity({
+    actionType: "emergency_responded",
+    targetType: "emergency",
+    targetId: userId,
+    targetLabel: targetLocation?.username || targetLocation?.email || userId,
+    summary:
+      normalizedStatus === "declined" && trimmedReason
+        ? `Emergency response: ${normalizedStatus}. Reason: ${trimmedReason}`
+        : `Emergency response: ${normalizedStatus}`,
+  }).catch((error) => {
+    console.warn("Failed to log emergency response:", error);
+  });
 
   return fetchSharedLocation(userId, false);
 }
@@ -660,6 +734,27 @@ export async function fetchEmergencyAlerts(forceServer = true) {
     });
 }
 
+export function observeAdminActivityLogs(callback) {
+  const logsQuery = query(adminActivityLogsRef, orderBy("createdAt", "desc"));
+  return onSnapshot(
+    logsQuery,
+    (snapshot) => {
+      const logs = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+      callback(logs);
+    },
+    (error) => {
+      console.warn("observeAdminActivityLogs error:", error);
+      callback([]);
+    }
+  );
+}
+
+export async function fetchAdminActivityLogs(forceServer = true) {
+  const logsQuery = query(adminActivityLogsRef, orderBy("createdAt", "desc"));
+  const snapshot = forceServer ? await getDocsFromServer(logsQuery) : await getDocs(logsQuery);
+  return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
 export async function fetchPost(id, forceServer = true) {
   const docRef = doc(db, "posts", id);
   const snap = forceServer ? await getDocFromServer(docRef) : await getDoc(docRef);
@@ -667,6 +762,7 @@ export async function fetchPost(id, forceServer = true) {
 }
 
 export async function savePost({ id, title, content, media = [], author, authorId = null }) {
+  const actingUser = auth.currentUser;
   const coverUrl = Array.isArray(media) && media.length ? media[0] : null;
   const payload = {
     title,
@@ -681,6 +777,15 @@ export async function savePost({ id, title, content, media = [], author, authorI
   try {
     if (id) {
       await updateDoc(doc(db, "posts", id), payload);
+      if (isAdmin(actingUser)) {
+        await logAdminActivity({
+          actionType: "post_updated",
+          targetType: "post",
+          targetId: id,
+          targetLabel: title,
+          summary: `Updated post: ${title}`,
+        }).catch((error) => console.warn("Failed to log post update:", error));
+      }
       console.log("Post updated:", id);
       return id;
     }
@@ -688,6 +793,15 @@ export async function savePost({ id, title, content, media = [], author, authorI
       ...payload,
       createdAt: serverTimestamp(),
     });
+    if (isAdmin(actingUser)) {
+      await logAdminActivity({
+        actionType: "post_created",
+        targetType: "post",
+        targetId: docRef.id,
+        targetLabel: title,
+        summary: `Created post: ${title}`,
+      }).catch((error) => console.warn("Failed to log post creation:", error));
+    }
     console.log("Post created:", docRef.id);
     return docRef.id;
   } catch (error) {
@@ -697,7 +811,18 @@ export async function savePost({ id, title, content, media = [], author, authorI
 }
 
 export async function deletePost(id) {
+  const actingUser = auth.currentUser;
+  const existingPost = await fetchPost(id, false).catch(() => null);
   await deleteDoc(doc(db, "posts", id));
+  if (isAdmin(actingUser)) {
+    await logAdminActivity({
+      actionType: "post_deleted",
+      targetType: "post",
+      targetId: id,
+      targetLabel: existingPost?.title || id,
+      summary: `Deleted post: ${existingPost?.title || id}`,
+    }).catch((error) => console.warn("Failed to log post deletion:", error));
+  }
 }
 
 export async function updatePostReactions(id, { likeDelta = 0, dislikeDelta = 0 }) {
@@ -876,6 +1001,7 @@ export async function fetchLandmark(id, forceServer = true) {
 }
 
 export async function saveLandmark({ id, name, lat, lng, summary, coverUrl, color }) {
+  const actingUser = auth.currentUser;
   const payload = {
     name,
     lat,
@@ -889,6 +1015,15 @@ export async function saveLandmark({ id, name, lat, lng, summary, coverUrl, colo
   try {
     if (id) {
       await updateDoc(doc(db, "landmarks", id), payload);
+      if (isAdmin(actingUser)) {
+        await logAdminActivity({
+          actionType: "landmark_updated",
+          targetType: "landmark",
+          targetId: id,
+          targetLabel: name,
+          summary: `Updated landmark: ${name}`,
+        }).catch((error) => console.warn("Failed to log landmark update:", error));
+      }
       console.log("Landmark updated:", id);
       return id;
     }
@@ -896,6 +1031,15 @@ export async function saveLandmark({ id, name, lat, lng, summary, coverUrl, colo
       ...payload,
       createdAt: serverTimestamp(),
     });
+    if (isAdmin(actingUser)) {
+      await logAdminActivity({
+        actionType: "landmark_created",
+        targetType: "landmark",
+        targetId: docRef.id,
+        targetLabel: name,
+        summary: `Created landmark: ${name}`,
+      }).catch((error) => console.warn("Failed to log landmark creation:", error));
+    }
     console.log("Landmark created:", docRef.id);
     return docRef.id;
   } catch (error) {
@@ -905,7 +1049,18 @@ export async function saveLandmark({ id, name, lat, lng, summary, coverUrl, colo
 }
 
 export async function deleteLandmark(id) {
+  const actingUser = auth.currentUser;
+  const existingLandmark = await fetchLandmark(id, false).catch(() => null);
   await deleteDoc(doc(db, "landmarks", id));
+  if (isAdmin(actingUser)) {
+    await logAdminActivity({
+      actionType: "landmark_deleted",
+      targetType: "landmark",
+      targetId: id,
+      targetLabel: existingLandmark?.name || id,
+      summary: `Deleted landmark: ${existingLandmark?.name || id}`,
+    }).catch((error) => console.warn("Failed to log landmark deletion:", error));
+  }
 }
 
 export async function verifyFirestoreConnection() {
