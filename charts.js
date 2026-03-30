@@ -8,6 +8,7 @@ import {
   changePassword,
   getUserProfile,
   isAdmin,
+  isSuperAdmin,
   fetchPosts,
   fetchLandmarks,
   fetchUsers,
@@ -18,6 +19,7 @@ import { showToast } from "./ui.js";
 import { registerServiceWorker } from "./pwa.js";
 import { initRevealAnimations } from "./motion.js";
 import { initAdminEmergencyNotifications } from "./admin-emergency-notifications.js";
+import { setSuperAdminNavVisible } from "./role-nav.js";
 
 const themeToggle = document.getElementById("themeToggle");
 const menuToggle = document.getElementById("menuToggle");
@@ -539,7 +541,7 @@ function renderIdentity(identity) {
   currentIdentity = identity;
   if (chartUsername) chartUsername.textContent = identity?.username || "--";
   if (chartEmail) chartEmail.textContent = identity?.email || "--";
-  if (chartRole) chartRole.textContent = t("administrator_role");
+  if (chartRole) chartRole.textContent = identity?.roleLabel || t("administrator_role");
 }
 
 function stopLiveChartObservers() {
@@ -825,6 +827,8 @@ observeAuth(async (user) => {
     return;
   }
 
+  setSuperAdminNavVisible(isSuperAdmin(user));
+
   try {
     const profile = await getUserProfile(user.uid);
     const identity = {
@@ -833,6 +837,7 @@ observeAuth(async (user) => {
         user.displayName ||
         (user.email ? user.email.split("@")[0] : t("administrator_role")),
       email: profile?.email || user.email || "--",
+      roleLabel: isSuperAdmin(user) ? "Super Admin" : t("administrator_role"),
     };
     renderIdentity(identity);
     await loadCharts();
