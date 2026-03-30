@@ -1,4 +1,6 @@
-import { initI18n } from "./i18n.js";
+import { observeAuth, logout, changePassword, isAdmin } from "./auth.js";
+import { initI18n, t } from "./i18n.js";
+import { showToast } from "./ui.js";
 import { registerServiceWorker } from "./pwa.js";
 import { initRevealAnimations } from "./motion.js";
 
@@ -8,6 +10,26 @@ const themeToggle = document.getElementById("themeToggle");
 const mobileThemeToggle = document.getElementById("mobileThemeToggle");
 const menuToggle = document.getElementById("menuToggle");
 const mobileMenu = document.getElementById("mobileMenu");
+const loginBtn = document.getElementById("loginBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const profileBtn = document.getElementById("profileBtn");
+const adminToolsBtn = document.getElementById("adminToolsBtn");
+const chartsBtn = document.getElementById("chartsBtn");
+const trackerBtn = document.getElementById("trackerBtn");
+const changePassBtn = document.getElementById("changePassBtn");
+const mobileLoginBtn = document.getElementById("mobileLoginBtn");
+const mobileLogoutBtn = document.getElementById("mobileLogoutBtn");
+const mobileProfileBtn = document.getElementById("mobileProfileBtn");
+const mobileAdminToolsBtn = document.getElementById("mobileAdminToolsBtn");
+const mobileChartsBtn = document.getElementById("mobileChartsBtn");
+const mobileTrackerBtn = document.getElementById("mobileTrackerBtn");
+const mobileChangePassBtn = document.getElementById("mobileChangePassBtn");
+const changePassDialog = document.getElementById("changePassDialog");
+const closeChangePass = document.getElementById("closeChangePass");
+const changePassForm = document.getElementById("changePassForm");
+const currentPassword = document.getElementById("currentPassword");
+const newPassword = document.getElementById("newPassword");
+const confirmPassword = document.getElementById("confirmPassword");
 
 function applyTheme(theme) {
   const value = theme === "light" ? "light" : "dark";
@@ -46,6 +68,89 @@ mobileMenu?.querySelectorAll("a").forEach((link) => {
     mobileMenu.classList.remove("open");
     menuToggle?.setAttribute("aria-expanded", "false");
   });
+});
+
+async function triggerPasswordReset() {
+  if (!changePassDialog) return;
+  currentPassword.value = "";
+  newPassword.value = "";
+  confirmPassword.value = "";
+  changePassDialog.showModal();
+}
+
+logoutBtn?.addEventListener("click", async () => {
+  try {
+    await logout();
+    window.location.href = "index.html";
+  } catch (error) {
+    showToast(t("toast_logout_failed", { error: error.message || error }), "error");
+  }
+});
+
+mobileLogoutBtn?.addEventListener("click", async () => {
+  try {
+    await logout();
+    window.location.href = "index.html";
+  } catch (error) {
+    showToast(t("toast_logout_failed", { error: error.message || error }), "error");
+  }
+});
+
+changePassBtn?.addEventListener("click", triggerPasswordReset);
+mobileChangePassBtn?.addEventListener("click", () => {
+  triggerPasswordReset();
+  mobileMenu?.classList.remove("open");
+  menuToggle?.setAttribute("aria-expanded", "false");
+});
+
+closeChangePass?.addEventListener("click", () => changePassDialog.close());
+
+changePassForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const current = currentPassword.value.trim();
+  const next = newPassword.value.trim();
+  const confirm = confirmPassword.value.trim();
+
+  if (!current || !next || !confirm) {
+    showToast(t("toast_fill_password_fields"), "warn");
+    return;
+  }
+  if (next.length < 6) {
+    showToast(t("toast_new_pass_short"), "warn");
+    return;
+  }
+  if (next !== confirm) {
+    showToast(t("toast_pass_not_match"), "warn");
+    return;
+  }
+
+  try {
+    await changePassword({ currentPassword: current, newPassword: next });
+    showToast(t("toast_pass_updated"), "success");
+    changePassDialog.close();
+  } catch (error) {
+    showToast(t("toast_current_pass_wrong"), "error");
+  }
+});
+
+observeAuth((user) => {
+  const authed = !!user;
+  const admin = isAdmin(user);
+
+  loginBtn?.classList.toggle("hidden", authed);
+  logoutBtn?.classList.toggle("hidden", !authed);
+  profileBtn?.classList.toggle("hidden", !authed);
+  changePassBtn?.classList.toggle("hidden", !authed);
+  mobileLoginBtn?.classList.toggle("hidden", authed);
+  mobileLogoutBtn?.classList.toggle("hidden", !authed);
+  mobileProfileBtn?.classList.toggle("hidden", !authed);
+  mobileChangePassBtn?.classList.toggle("hidden", !authed);
+  adminToolsBtn?.classList.toggle("hidden", !admin);
+  chartsBtn?.classList.toggle("hidden", !admin);
+  trackerBtn?.classList.toggle("hidden", !admin);
+  mobileAdminToolsBtn?.classList.toggle("hidden", !admin);
+  mobileChartsBtn?.classList.toggle("hidden", !admin);
+  mobileTrackerBtn?.classList.toggle("hidden", !admin);
 });
 
 initI18n();
