@@ -1,4 +1,4 @@
-import { observeAuth, observeSharedLocations, isAdmin, isSuperAdmin, logout, respondToEmergency } from "./auth.js";
+import { observeAuth, observeSharedLocations, isSuperAdmin, canManageEmergencies, canAccessAdminWorkspace, getAdminRoleLabel, logout, respondToEmergency } from "./auth.js";
 import { initI18n, t } from "./i18n.js";
 import { showToast } from "./ui.js";
 import { registerServiceWorker } from "./pwa.js";
@@ -45,6 +45,8 @@ const responseReason = document.getElementById("responseReason");
 const approveEmergencyBtn = document.getElementById("approveEmergencyBtn");
 const helpEmergencyBtn = document.getElementById("helpEmergencyBtn");
 const declineEmergencyBtn = document.getElementById("declineEmergencyBtn");
+const desktopAdminToolsLink = document.querySelector('.desktop-shortcuts .sidebar-actions a[href="admin.html"]');
+const mobileAdminToolsLink = document.querySelector('.mobile-actions a[href="admin.html"]');
 
 const THEME_KEY = "bicol-ip-theme";
 const BICOL_CENTER = [13.420988, 123.413673];
@@ -66,6 +68,8 @@ let adminMarker = null;
 let guideLine = null;
 let adminGeoWatchId = null;
 let trackerMapEventsBound = false;
+const TRACKER_ROUTE_INFO_COLOR = "#6e8088";
+const TRACKER_ROUTE_WARNING_COLOR = "#8c6058";
 
 function applyTheme(theme) {
   const value = theme === "light" ? "light" : "dark";
@@ -329,7 +333,7 @@ function updateGuideLine() {
       [selectedEntry.lat, selectedEntry.lng],
     ],
     {
-      color: selectedEntry.emergencyActive === true ? "#c45344" : "#2b7bff",
+      color: selectedEntry.emergencyActive === true ? TRACKER_ROUTE_WARNING_COLOR : TRACKER_ROUTE_INFO_COLOR,
       weight: 4,
       opacity: 0.9,
       dashArray: "10 12",
@@ -721,15 +725,22 @@ observeAuth((user) => {
     return;
   }
 
-  if (!isAdmin(user)) {
+  if (!canManageEmergencies(user)) {
     window.location.href = "profile.html";
     return;
   }
 
   setSuperAdminNavVisible(isSuperAdmin(user));
+  desktopAdminToolsLink?.classList.toggle("hidden", !canAccessAdminWorkspace(user));
+  mobileAdminToolsLink?.classList.toggle("hidden", !canAccessAdminWorkspace(user));
   trackerUsername.textContent = user.displayName || user.email?.split("@")[0] || "--";
   trackerEmail.textContent = user.email || "--";
-  trackerRole.textContent = isSuperAdmin(user) ? "Super Admin" : "Administrator";
+  trackerRole.textContent = getAdminRoleLabel(user);
+  if (trackerStatus) {
+    trackerStatus.textContent = isSuperAdmin(user)
+      ? "Super Admin oversight for live locations and emergency coordination."
+      : "Emergency Admin workspace for live locations and emergency response.";
+  }
   updateAdminLocationStatus();
   startAdminLocationTracking();
 
