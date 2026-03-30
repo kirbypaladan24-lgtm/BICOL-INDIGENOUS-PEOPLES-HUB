@@ -9,6 +9,10 @@ import {
   getUserProfile,
   isAdmin,
   isSuperAdmin,
+  getAdminRoleLabel,
+  canAccessAdminWorkspace,
+  canAccessCharts,
+  canAccessTracker,
   fetchLandmarks,
   fetchSharedLocation,
   observeSharedLocation,
@@ -141,14 +145,14 @@ function renderWorkspaceSummary({ role = t("guest_role"), ownedCount = 0, commun
       ? t("workspace_note_admin")
       : t("workspace_note_profile");
   }
-  adminToolsSidebarLink?.classList.toggle("hidden", !admin);
-  chartsSidebarLink?.classList.toggle("hidden", !admin);
-  trackerSidebarLink?.classList.toggle("hidden", !admin);
-  mobileAdminToolsLink?.classList.toggle("hidden", !admin);
-  mobileChartsLink?.classList.toggle("hidden", !admin);
-  mobileTrackerLink?.classList.toggle("hidden", !admin);
-  trackerQuickAction?.classList.toggle("hidden", !admin);
-  trackerActionLink?.classList.toggle("hidden", !admin);
+  adminToolsSidebarLink?.classList.toggle("hidden", !canAccessAdminWorkspace(currentUser));
+  chartsSidebarLink?.classList.toggle("hidden", !canAccessCharts(currentUser));
+  trackerSidebarLink?.classList.toggle("hidden", !canAccessTracker(currentUser));
+  mobileAdminToolsLink?.classList.toggle("hidden", !canAccessAdminWorkspace(currentUser));
+  mobileChartsLink?.classList.toggle("hidden", !canAccessCharts(currentUser));
+  mobileTrackerLink?.classList.toggle("hidden", !canAccessTracker(currentUser));
+  trackerQuickAction?.classList.toggle("hidden", !canAccessTracker(currentUser));
+  trackerActionLink?.classList.toggle("hidden", !canAccessTracker(currentUser));
   locationShareSection?.classList.toggle("hidden", admin);
   shareLocationQuickAction?.classList.toggle("hidden", admin);
   emergencyQuickAction?.classList.toggle("hidden", admin);
@@ -907,10 +911,22 @@ observeAuth(async (user) => {
   }
 
   const adminUser = isAdmin(currentUser);
+  const roleLabel = adminUser ? getAdminRoleLabel(currentUser) : t("member_role");
   renderWorkspaceSummary({
-    role: adminUser ? t("administrator_role") : t("member_role"),
+    role: roleLabel,
     admin: adminUser,
   });
+  if (profileStatus && adminUser) {
+    if (roleLabel === "Content Admin") {
+      profileStatus.textContent = "Content Admin workspace for posts, editing, and moderation.";
+    } else if (roleLabel === "Landmark Admin") {
+      profileStatus.textContent = "Landmark Admin workspace for map entries and landmark accuracy.";
+    } else if (roleLabel === "Emergency Admin") {
+      profileStatus.textContent = "Emergency Admin workspace for live locations and emergency response.";
+    } else {
+      profileStatus.textContent = "Super Admin workspace with full oversight.";
+    }
+  }
 
   try {
     currentLocationRecord = await fetchSharedLocation(currentUser.uid, true);
