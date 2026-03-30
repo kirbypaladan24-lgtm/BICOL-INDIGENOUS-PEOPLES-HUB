@@ -8,6 +8,7 @@ import {
   auth,
   getUserProfile,
   isAdmin,
+  isSuperAdmin,
   fetchLandmarks,
   fetchSharedLocation,
   observeSharedLocation,
@@ -21,6 +22,7 @@ import { showToast } from "./ui.js";
 import { registerServiceWorker } from "./pwa.js";
 import { initRevealAnimations } from "./motion.js";
 import { initAdminEmergencyNotifications } from "./admin-emergency-notifications.js";
+import { setSuperAdminNavVisible } from "./role-nav.js";
 
 const themeToggle = document.getElementById("themeToggle");
 const logoutBtn = document.getElementById("logoutBtn");
@@ -128,6 +130,7 @@ function renderProfileIdentity({ username = "--", email = "--" } = {}) {
 }
 
 function renderWorkspaceSummary({ role = t("guest_role"), ownedCount = 0, communityCount = 0, landmarkCount = 0, admin = false } = {}) {
+  setSuperAdminNavVisible(isSuperAdmin(currentUser));
   if (profileRole) profileRole.textContent = role;
   if (profileOwnedCount) profileOwnedCount.textContent = String(ownedCount);
   if (profileCommunityCount) profileCommunityCount.textContent = String(communityCount);
