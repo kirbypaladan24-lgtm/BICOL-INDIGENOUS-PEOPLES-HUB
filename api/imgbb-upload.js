@@ -72,6 +72,30 @@ function hasAllowedOrigin(req) {
   });
 }
 
+function normalizeImgbbUrl(rawUrl) {
+  if (!rawUrl) return null;
+  try {
+    const parsed = new URL(String(rawUrl).trim());
+    if (parsed.protocol !== "https:") {
+      parsed.protocol = "https:";
+    }
+    return parsed.toString();
+  } catch {
+    return String(rawUrl || "").trim() || null;
+  }
+}
+
+function extractImgbbUrl(payload) {
+  return normalizeImgbbUrl(
+    payload?.data?.url ||
+      payload?.data?.image?.url ||
+      payload?.data?.medium?.url ||
+      payload?.data?.thumb?.url ||
+      payload?.data?.display_url ||
+      null
+  );
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -127,7 +151,7 @@ export default async function handler(req, res) {
       return res.status(response.status).json({ error: errorMessage });
     }
 
-    const url = payload?.data?.display_url || payload?.data?.url || null;
+    const url = extractImgbbUrl(payload);
     if (!url) {
       return res.status(502).json({ error: "ImgBB did not return an image URL" });
     }
