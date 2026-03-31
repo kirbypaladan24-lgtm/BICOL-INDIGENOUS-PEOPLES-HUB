@@ -22,6 +22,10 @@ const PUBLIC_FIREBASE_FALLBACK = {
   measurementId: "G-XDYGMNWSMC",
 };
 
+const LOCAL_HOSTS = ["localhost", "127.0.0.1"];
+const isLocalEnvironment =
+  typeof location !== "undefined" && LOCAL_HOSTS.includes(location.hostname);
+
 function readViteFirebaseConfig() {
   if (typeof import.meta === "undefined" || !import.meta.env) {
     return null;
@@ -84,28 +88,39 @@ function normalizeFirebaseConfig(config) {
   };
 }
 
-function getFirebaseConfig() {
+function getFirebaseConfigResult() {
   const candidates = [
-    readViteFirebaseConfig(),
-    readInjectedFirebaseConfig(),
-    readLocalDevConfig(),
-    PUBLIC_FIREBASE_FALLBACK,
+    { source: "vite", config: readViteFirebaseConfig() },
+    { source: "injected", config: readInjectedFirebaseConfig() },
+    { source: "local-dev", config: readLocalDevConfig() },
+    { source: "fallback", config: PUBLIC_FIREBASE_FALLBACK },
   ];
 
+  let firstConfiguredCandidate = null;
+
   for (const candidate of candidates) {
-    const normalized = normalizeFirebaseConfig(candidate);
+    const normalized = normalizeFirebaseConfig(candidate.config);
+    if (normalized && !firstConfiguredCandidate) {
+      firstConfiguredCandidate = { source: candidate.source, config: normalized };
+    }
     if (getMissingKeys(normalized).length === 0) {
-      return normalized;
+      return {
+        config: normalized,
+        source: candidate.source,
+      };
     }
   }
 
-  const fallbackCandidate = normalizeFirebaseConfig(candidates.find(Boolean));
+  const fallbackCandidate = firstConfiguredCandidate?.config || null;
   const missingKeys = getMissingKeys(fallbackCandidate);
   console.error(
     "[Firebase] Missing required config values:",
     missingKeys.length ? missingKeys.join(", ") : REQUIRED_FIREBASE_KEYS.join(", ")
   );
-  return null;
+  return {
+    config: null,
+    source: firstConfiguredCandidate?.source || null,
+  };
 }
 
 export const SECURITY_CONFIG = {
@@ -120,20 +135,21 @@ export const SECURITY_CONFIG = {
   isEmulator:
     location.hostname === "localhost" &&
     new URLSearchParams(location.search).get("emulator") === "true",
-  isProduction: !["localhost", "127.0.0.1"].includes(location.hostname),
+  isProduction: !isLocalEnvironment,
   features: {
     enableOfflinePersistence: true,
     enableMultiTab: true,
     forceServerReads: true,
-    enableDebugLogging: !["localhost", "127.0.0.1"].includes(location.hostname),
+    enableDebugLogging:
+      isLocalEnvironment &&
+      new URLSearchParams(typeof location !== "undefined" ? location.search : "").get("debug") ===
+        "true",
   },
 };
 
 export function validateOrigin() {
   const currentOrigin = location.origin;
-  const isAllowed = SECURITY_CONFIG.allowedOrigins.some(
-    (origin) => currentOrigin === origin || currentOrigin.startsWith(origin)
-  );
+  const isAllowed = SECURITY_CONFIG.allowedOrigins.includes(currentOrigin);
 
   if (!isAllowed && SECURITY_CONFIG.isProduction) {
     console.error("[Firebase] Origin not allowed:", currentOrigin);
@@ -148,21 +164,12 @@ export function validateDomain() {
     return false;
   }
 
-  const expectedAuthDomain = firebaseConfig.authDomain;
-  const currentHost = location.hostname;
-
-  if (
-    !currentHost.includes(expectedAuthDomain) &&
-    !expectedAuthDomain.includes(currentHost) &&
-    SECURITY_CONFIG.isProduction
-  ) {
-    console.warn("[Firebase] Domain mismatch. Expected:", expectedAuthDomain, "Got:", currentHost);
-  }
-
-  return true;
+  return validateOrigin();
 }
 
-export const firebaseConfig = getFirebaseConfig();
+const firebaseConfigResult = getFirebaseConfigResult();
+export const firebaseConfig = firebaseConfigResult.config;
+export const firebaseConfigSource = firebaseConfigResult.source;
 export const firebaseConfigReady = Boolean(firebaseConfig);
 
 export function assertFirebaseConfig() {
@@ -199,10 +206,17 @@ export function assertFirebaseConfig() {
 validateOrigin();
 validateDomain();
 
+if (SECURITY_CONFIG.isProduction && firebaseConfigReady && firebaseConfigSource === "fallback") {
+  console.warn(
+    "[Firebase] Using the committed fallback config in production. Set runtime or VITE_FIREBASE_* values to avoid hidden deployment drift."
+  );
+}
+
 if (SECURITY_CONFIG.features.enableDebugLogging && firebaseConfigReady) {
   console.log("[Firebase] Config loaded:", {
     projectId: firebaseConfig.projectId,
     isEmulator: SECURITY_CONFIG.isEmulator,
     isProduction: SECURITY_CONFIG.isProduction,
+    source: firebaseConfigSource,
   });
 }
