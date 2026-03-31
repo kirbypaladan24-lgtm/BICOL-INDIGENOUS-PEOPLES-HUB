@@ -20,6 +20,9 @@ function enhanceImageLoading(imgEl, { eager = false } = {}) {
   if (!imgEl) return;
   imgEl.decoding = "async";
   imgEl.loading = eager ? "eager" : "lazy";
+  if (eager) {
+    imgEl.fetchPriority = "high";
+  }
   imgEl.classList.add("progressive-image");
 
   const markReady = () => {
@@ -554,11 +557,15 @@ export function renderPosts(posts) {
     const images = Array.from(article.querySelectorAll("img"));
     images.forEach((imgEl) => {
       if (imgEl.closest(".insta-carousel")) return;
-      if (!imgEl.loading) imgEl.loading = "lazy";
+      const isPriorityImage = !imgEl.closest(".post-row") || images.indexOf(imgEl) === 0;
+      if (!imgEl.loading) imgEl.loading = isPriorityImage ? "eager" : "lazy";
       imgEl.decoding = "async";
+      if (isPriorityImage) {
+        imgEl.fetchPriority = "high";
+      }
       imgEl.style.cursor = "pointer";
       imgEl.draggable = false;
-      enhanceImageLoading(imgEl);
+      enhanceImageLoading(imgEl, { eager: isPriorityImage });
       if (imgEl.__lightboxBound) return;
       imgEl.__lightboxBound = true;
       imgEl.addEventListener("click", (ev) => {
