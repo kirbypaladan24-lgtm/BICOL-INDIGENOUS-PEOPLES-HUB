@@ -1,7 +1,7 @@
 // sw.js - Service Worker for Bicol IP Hub
 // Provides offline caching for assets, posts, and map tiles
 
-const CACHE_VERSION = 'v10';
+const CACHE_VERSION = 'v11';
 const STATIC_CACHE = `bicol-ip-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `bicol-ip-dynamic-${CACHE_VERSION}`;
 const IMAGE_CACHE = `bicol-ip-images-${CACHE_VERSION}`;
@@ -13,6 +13,10 @@ function debugLog(...args) {
   if (SW_DEBUG) {
     console.log(...args);
   }
+}
+
+function isCacheableResponse(response) {
+  return Boolean(response) && (response.ok || response.type === 'opaque');
 }
 
 // Assets to cache on install
@@ -147,7 +151,7 @@ self.addEventListener('fetch', (event) => {
             // Return cached but fetch update in background
             fetch(request)
               .then((response) => {
-                if (response.ok) {
+                if (isCacheableResponse(response)) {
                   caches.open(STATIC_CACHE).then((cache) => cache.put(request, response));
                 }
               })
@@ -155,7 +159,7 @@ self.addEventListener('fetch', (event) => {
             return cached;
           }
           return fetch(request).then((response) => {
-            if (!response.ok) return response;
+            if (!isCacheableResponse(response)) return response;
             const clone = response.clone();
             caches.open(STATIC_CACHE).then((cache) => cache.put(request, clone));
             return response;
@@ -165,19 +169,34 @@ self.addEventListener('fetch', (event) => {
       break;
       
     case 'image':
-      // Stale-while-revalidate for images
+      // Cache-first with background refresh so post images appear quickly.
       event.respondWith(
-        caches.open(IMAGE_CACHE).then((cache) => {
-          return cache.match(request).then((cached) => {
-            const fetchPromise = fetch(request).then((networkResponse) => {
-              if (networkResponse.ok) {
-                cache.put(request, networkResponse.clone());
-              }
-              return networkResponse;
-            }).catch(() => cached);
-            
-            return cached || fetchPromise;
-          });
+        caches.open(IMAGE_CACHE).then(async (cache) => {
+          const cached = await cache.match(request);
+
+          if (cached) {
+            event.waitUntil(
+              fetch(request)
+                .then((networkResponse) => {
+                  if (isCacheableResponse(networkResponse)) {
+                    return cache.put(request, networkResponse.clone());
+                  }
+                  return null;
+                })
+                .catch(() => null)
+            );
+            return cached;
+          }
+
+          try {
+            const networkResponse = await fetch(request);
+            if (isCacheableResponse(networkResponse)) {
+              cache.put(request, networkResponse.clone());
+            }
+            return networkResponse;
+          } catch (error) {
+            return cached;
+          }
         })
       );
       break;
@@ -189,7 +208,7 @@ self.addEventListener('fetch', (event) => {
           const cached = await cache.match(request);
           const fetchPromise = fetch(request)
             .then((response) => {
-              if (response.ok) {
+              if (isCacheableResponse(response)) {
                 cache.put(request, response.clone());
               }
               return response;
@@ -206,7 +225,7 @@ self.addEventListener('fetch', (event) => {
       event.respondWith(
         fetch(request)
           .then((response) => {
-            if (response.ok) {
+            if (isCacheableResponse(response)) {
               const clone = response.clone();
               caches.open(DYNAMIC_CACHE).then((cache) => cache.put(request, clone));
             }
@@ -224,7 +243,7 @@ self.addEventListener('fetch', (event) => {
       // Dynamic content: Network with cache fallback
       event.respondWith(
         fetch(request).then((response) => {
-          if (!response.ok) return response;
+          if (!isCacheableResponse(response)) return response;
           const clone = response.clone();
           caches.open(DYNAMIC_CACHE).then((cache) => cache.put(request, clone));
           return response;
