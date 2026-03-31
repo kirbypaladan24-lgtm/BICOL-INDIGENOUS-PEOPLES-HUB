@@ -1,7 +1,7 @@
 import { showToast } from "./ui.js";
 
-const MAX_UPLOAD_DIMENSION = 1600;
-const JPEG_QUALITY = 0.82;
+const MAX_UPLOAD_DIMENSION = 2200;
+const JPEG_QUALITY = 0.9;
 const MAX_IMAGES_PER_POST = 10;
 const PUBLIC_IMGBB_FALLBACK_KEY = "dae3de7222aca4af1a7d47c6cfd70840";
 const UPLOAD_TIMEOUT_MS = 25_000;
@@ -29,7 +29,7 @@ async function resizeImage(file, maxDim = MAX_UPLOAD_DIMENSION, quality = JPEG_Q
   const targetWidth = Math.round(width * ratio);
   const targetHeight = Math.round(height * ratio);
 
-  if (ratio === 1 && file.size < 800 * 1024) {
+  if (ratio === 1 && file.size < 2 * 1024 * 1024) {
     return file;
   }
 
@@ -39,8 +39,11 @@ async function resizeImage(file, maxDim = MAX_UPLOAD_DIMENSION, quality = JPEG_Q
   const ctx = canvas.getContext("2d");
   ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
 
+  const outputType =
+    file.type === "image/png" || file.type === "image/webp" ? file.type : "image/jpeg";
+
   const blob = await new Promise((resolve) => {
-    canvas.toBlob((result) => resolve(result), "image/jpeg", quality);
+    canvas.toBlob((result) => resolve(result), outputType, quality);
   });
 
   return blob || file;
