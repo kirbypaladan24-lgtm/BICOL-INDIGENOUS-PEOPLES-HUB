@@ -616,7 +616,7 @@ export function renderPosts(posts) {
         <a class="share-item" data-platform="email" target="_blank" rel="noopener noreferrer">Email</a>
       </div>
     `;
-    article.appendChild(share);
+    reactions.appendChild(share);
 
     bindSyncedReactions(article, p);
     bindShare(article, p);
