@@ -3,6 +3,7 @@ import {
   getAuth,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  fetchSignInMethodsForEmail,
   signInAnonymously,
   onAuthStateChanged,
   signOut,
@@ -613,12 +614,20 @@ export async function changePassword({ currentPassword, newPassword }) {
 }
 
 export async function createAccountWithProfile({ email, password, username, phone, birthdate }) {
-  const { user } = await createUserWithEmailAndPassword(auth, email, password);
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  const existingSignInMethods = await fetchSignInMethodsForEmail(auth, normalizedEmail);
+  if (Array.isArray(existingSignInMethods) && existingSignInMethods.length) {
+    const alreadyUsedError = new Error("The email address is already registered.");
+    alreadyUsedError.code = "auth/email-already-in-use";
+    throw alreadyUsedError;
+  }
+
+  const { user } = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
   const userRef = doc(db, "users", user.uid);
   const privateUserRef = doc(db, "users_private", user.uid);
   const userData = {
     username,
-    email,
+    email: normalizedEmail,
     uid: user.uid,
     createdAt: serverTimestamp(),
     lastLoginAt: serverTimestamp(),
