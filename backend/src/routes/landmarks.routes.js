@@ -180,7 +180,7 @@ router.put(
       }
 
       await logAdminActivity(client, req.auth.dbUser, {
-        actionType: "landmark_edited",
+        actionType: "landmark_updated",
         targetType: "landmark",
         targetId: req.params.id,
         targetLabel: updated.rows[0].name,
