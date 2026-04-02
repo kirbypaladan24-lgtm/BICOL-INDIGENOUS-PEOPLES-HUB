@@ -7,6 +7,7 @@ import { asyncHandler } from "../utils/async-handler.js";
 import { logAdminActivity } from "../utils/audit-log.js";
 import { badRequest, forbidden, notFound } from "../utils/api-error.js";
 import { ROLE } from "../utils/roles.js";
+import { buildUserIdentitySnapshot, loadUserByIdOrThrow } from "../utils/user-records.js";
 import {
   ensureObject,
   parseBoolean,
@@ -118,59 +119,65 @@ router.post(
       throw badRequest("An emergency message is required when emergency_active is true.");
     }
 
-    const result = await query(
-      `
-      INSERT INTO shared_locations (
-        user_id, username_snapshot, email_snapshot, phone_snapshot,
-        latitude, longitude, accuracy_meters,
-        consent_accepted, consent_accepted_at, sharing_enabled,
-        emergency_active, emergency_message, emergency_image_url,
-        emergency_status, emergency_submitted_at
-      )
-      VALUES (
-        $1, $2, $3, $4,
-        $5, $6, $7,
-        $8, CASE WHEN $8 THEN COALESCE($9, NOW()) ELSE NULL END, $10,
-        $11, $12, $13,
-        CASE WHEN $11 THEN 'pending' ELSE NULL END,
-        CASE WHEN $11 THEN NOW() ELSE NULL END
-      )
-      ON CONFLICT (user_id)
-      DO UPDATE SET
-        username_snapshot = EXCLUDED.username_snapshot,
-        email_snapshot = EXCLUDED.email_snapshot,
-        phone_snapshot = EXCLUDED.phone_snapshot,
-        latitude = EXCLUDED.latitude,
-        longitude = EXCLUDED.longitude,
-        accuracy_meters = EXCLUDED.accuracy_meters,
-        consent_accepted = EXCLUDED.consent_accepted,
-        consent_accepted_at = COALESCE(shared_locations.consent_accepted_at, EXCLUDED.consent_accepted_at),
-        sharing_enabled = EXCLUDED.sharing_enabled,
-        emergency_active = EXCLUDED.emergency_active,
-        emergency_message = EXCLUDED.emergency_message,
-        emergency_image_url = EXCLUDED.emergency_image_url,
-        emergency_status = EXCLUDED.emergency_status,
-        emergency_submitted_at = EXCLUDED.emergency_submitted_at
-      RETURNING *
-      `,
-      [
-        targetUserId,
-        pickDisplayName(req.auth.dbUser),
-        req.auth.dbUser.email,
-        phoneSnapshot,
-        latitude,
-        longitude,
-        accuracyMeters,
-        consentAccepted,
-        body.consent_accepted_at || null,
-        sharingEnabled,
-        emergencyActive,
-        emergencyMessage,
-        emergencyImageUrl,
-      ]
-    );
+    const result = await withTransaction(async (client) => {
+      const targetUser = await loadUserByIdOrThrow(client, targetUserId, "Target user not found.");
+      const snapshot = buildUserIdentitySnapshot(targetUser);
+      const upserted = await client.query(
+        `
+        INSERT INTO shared_locations (
+          user_id, username_snapshot, email_snapshot, phone_snapshot,
+          latitude, longitude, accuracy_meters,
+          consent_accepted, consent_accepted_at, sharing_enabled,
+          emergency_active, emergency_message, emergency_image_url,
+          emergency_status, emergency_submitted_at
+        )
+        VALUES (
+          $1, $2, $3, $4,
+          $5, $6, $7,
+          $8, CASE WHEN $8 THEN COALESCE($9, NOW()) ELSE NULL END, $10,
+          $11, $12, $13,
+          CASE WHEN $11 THEN 'pending' ELSE NULL END,
+          CASE WHEN $11 THEN NOW() ELSE NULL END
+        )
+        ON CONFLICT (user_id)
+        DO UPDATE SET
+          username_snapshot = EXCLUDED.username_snapshot,
+          email_snapshot = EXCLUDED.email_snapshot,
+          phone_snapshot = EXCLUDED.phone_snapshot,
+          latitude = EXCLUDED.latitude,
+          longitude = EXCLUDED.longitude,
+          accuracy_meters = EXCLUDED.accuracy_meters,
+          consent_accepted = EXCLUDED.consent_accepted,
+          consent_accepted_at = COALESCE(shared_locations.consent_accepted_at, EXCLUDED.consent_accepted_at),
+          sharing_enabled = EXCLUDED.sharing_enabled,
+          emergency_active = EXCLUDED.emergency_active,
+          emergency_message = EXCLUDED.emergency_message,
+          emergency_image_url = EXCLUDED.emergency_image_url,
+          emergency_status = EXCLUDED.emergency_status,
+          emergency_submitted_at = EXCLUDED.emergency_submitted_at
+        RETURNING *
+        `,
+        [
+          targetUserId,
+          snapshot.usernameSnapshot,
+          snapshot.emailSnapshot,
+          phoneSnapshot,
+          latitude,
+          longitude,
+          accuracyMeters,
+          consentAccepted,
+          body.consent_accepted_at || null,
+          sharingEnabled,
+          emergencyActive,
+          emergencyMessage,
+          emergencyImageUrl,
+        ]
+      );
 
-    res.json(result.rows[0]);
+      return upserted.rows[0];
+    });
+
+    res.json(result);
   })
 );
 
