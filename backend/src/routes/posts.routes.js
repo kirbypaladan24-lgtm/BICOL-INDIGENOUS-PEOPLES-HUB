@@ -270,7 +270,7 @@ router.put(
       }
 
       await logAdminActivity(client, req.auth.dbUser, {
-        actionType: "post_edited",
+        actionType: "post_updated",
         targetType: "post",
         targetId: req.params.id,
         targetLabel: title || existingPost.title,
