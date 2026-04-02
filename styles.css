@@ -5217,11 +5217,19 @@ textarea#landmarkSummary {
     max-height: calc(100dvh - 78px - 12px);
   }
   .post-row {
-    padding: 16px;
-    border-radius: 18px;
+    padding: 18px 0 20px;
+    border-radius: 0;
   }
   .post-title {
     font-size: 19px;
+  }
+}
+
+@media (max-width: 640px) {
+  [data-theme="light"] .post-row,
+  .post-row {
+    background: transparent;
+    box-shadow: none;
   }
 }
 
