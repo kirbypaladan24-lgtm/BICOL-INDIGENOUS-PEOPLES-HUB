@@ -840,7 +840,7 @@ async function queueUserProfileSync(uid = auth.currentUser?.uid, { includePrivat
 
 async function queuePostSync(postId, ownerUid = null) {
   if (!postId) return null;
-  const post = await fetchPost(postId, false).catch(() => null);
+  const post = await fetchPost(postId, true).catch(() => fetchPost(postId, false).catch(() => null));
   if (!post) return null;
 
   const authorProfile = post.authorId ? await getUserProfile(post.authorId).catch(() => null) : null;
