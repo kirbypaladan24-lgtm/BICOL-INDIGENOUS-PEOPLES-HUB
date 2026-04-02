@@ -2171,7 +2171,8 @@ button {
 
 .post-share {
   position: relative;
-  margin-top: 8px;
+  margin-top: 0;
+  margin-left: auto;
 }
 
 .share-btn {
