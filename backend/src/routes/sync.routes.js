@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { withTransaction } from "../config/db.js";
 import { env } from "../config/env.js";
+import { getFirebaseFirestore, isFirebaseFirestoreConfigured } from "../config/firebase-admin.js";
 import { requireAuth } from "../middleware/auth.js";
 import { createRateLimiter } from "../middleware/rate-limit.js";
 import { asyncHandler } from "../utils/async-handler.js";
@@ -122,8 +123,11 @@ function getPayloadEntityUid(job) {
   if (job.entityType === "user_profile") {
     return job.payload?.publicProfile?.uid || job.payload?.uid || job.ownerUid || job.firestoreId;
   }
-  if (job.entityType === "post" || job.entityType === "post_delete") {
+  if (job.entityType === "post_delete") {
     return job.payload?.authorId || job.ownerUid || null;
+  }
+  if (job.entityType === "post") {
+    return job.ownerUid || job.payload?.authorId || null;
   }
   if (job.entityType === "shared_location" || job.entityType === "emergency_alert") {
     return job.payload?.uid || job.payload?.userId || job.ownerUid || job.firestoreId;
@@ -151,10 +155,11 @@ function assertSyncPermission(job, auth) {
     case "user_profile":
       if (isOwnTarget) return;
       break;
-    case "post":
     case "post_delete":
       if (isOwnTarget || canManagePosts(role)) return;
       break;
+    case "post":
+      return;
     case "landmark":
     case "landmark_delete":
       if (canManageLandmarks(role)) return;
@@ -178,6 +183,37 @@ function assertSyncPermission(job, auth) {
   }
 
   throw forbidden("Your role does not allow this sync job.");
+}
+
+async function loadCanonicalFirestorePost(firestoreId) {
+  if (!firestoreId || !isFirebaseFirestoreConfigured()) {
+    return null;
+  }
+
+  try {
+    const firestore = getFirebaseFirestore();
+    const postSnap = await firestore.collection("posts").doc(String(firestoreId)).get();
+    if (!postSnap.exists) return null;
+
+    const postData = postSnap.data() || {};
+    let authorProfile = null;
+    const authorUid = normalizeString(postData.authorId, 128);
+    if (authorUid) {
+      const authorSnap = await firestore.collection("users").doc(authorUid).get();
+      if (authorSnap.exists) {
+        authorProfile = authorSnap.data() || null;
+      }
+    }
+
+    return {
+      id: postSnap.id,
+      ...postData,
+      authorProfile,
+    };
+  } catch (error) {
+    console.warn("[Sync] Failed to load canonical Firestore post for PostgreSQL sync:", error);
+    return null;
+  }
 }
 
 async function hasUserFieldConflict(client, { field, value, firebaseUid }) {
@@ -456,9 +492,11 @@ async function syncPostJob(client, job, auth) {
     };
   }
 
-  const payload = ensureObject(job.payload, "sync payload");
+  const payload =
+    (await loadCanonicalFirestorePost(job.firestoreId)) ||
+    ensureObject(job.payload, "sync payload");
   const authorUid = payload.authorId || job.ownerUid || auth.firebaseUid;
-  if (!canManagePosts(auth.role) && authorUid !== auth.firebaseUid) {
+  if (!canManagePosts(auth.role) && job.ownerUid && job.ownerUid !== auth.firebaseUid) {
     throw forbidden("You can only sync your own posts.");
   }
 
