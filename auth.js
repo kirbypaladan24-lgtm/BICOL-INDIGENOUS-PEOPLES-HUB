@@ -122,6 +122,7 @@ const syncQueueRef = collection(db, "pg_sync_queue");
 let syncIntervalId = null;
 let syncProcessingPromise = null;
 let syncOnlineBindingReady = false;
+let anonymousAuthUnavailable = false;
 const OWN_SYNC_ENTITY_TYPES = [
   "user_profile",
   "post",
@@ -589,10 +590,12 @@ export async function logout() {
 
 export async function ensureAnonAuth() {
   if (auth.currentUser) return auth.currentUser;
+  if (anonymousAuthUnavailable) return null;
   try {
     const { user } = await signInAnonymously(auth);
     return user;
   } catch (e) {
+    anonymousAuthUnavailable = true;
     return null;
   }
 }
