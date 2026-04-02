@@ -8,13 +8,27 @@ const router = Router();
 router.get(
   "/",
   asyncHandler(async (req, res) => {
-    const dbStatus = await testDatabaseConnection();
+    let database = "connected";
+    let databaseName = null;
+    let serverTime = null;
+    let databaseError = null;
+
+    try {
+      const dbStatus = await testDatabaseConnection(1500);
+      databaseName = dbStatus.database_name;
+      serverTime = dbStatus.now;
+    } catch (error) {
+      database = "unavailable";
+      databaseError = error?.message || "Database connection failed.";
+    }
+
     res.json({
       status: "ok",
       service: "bips-hub-backend",
-      database: "connected",
-      databaseName: dbStatus.database_name,
-      serverTime: dbStatus.now,
+      database,
+      databaseName,
+      serverTime,
+      databaseError,
       authConfigured: isFirebaseAuthConfigured(),
     });
   })
