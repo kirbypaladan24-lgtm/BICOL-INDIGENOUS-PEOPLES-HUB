@@ -275,7 +275,6 @@ async function enqueueSyncJob({
   const jobId = buildSyncJobId(entityType, operation, firestoreId);
   const jobRef = getSyncJobDocRef(jobId);
   const jobData = {
-    id: jobId,
     jobId,
     entityType,
     operation,
@@ -926,7 +925,8 @@ async function queueEmergencyAlertSync(alertId, ownerUid = auth.currentUser?.uid
 
 async function queueAdminActivitySync(logId) {
   if (!logId) return null;
-  const logSnap = await getDoc(doc(db, "admin_activity_logs", logId));
+  const logRef = doc(db, "admin_activity_logs", logId);
+  const logSnap = await getDocFromServer(logRef).catch(() => getDoc(logRef));
   if (!logSnap.exists()) return null;
 
   return enqueueSyncJob({
