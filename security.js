@@ -40,6 +40,9 @@ export const CSP_POLICY = {
   ],
   'connect-src': [
     "'self'",
+    'https://unpkg.com',
+    'https://www.gstatic.com',
+    'https://*.gstatic.com',
     'https://*.firebaseio.com',
     'https://*.googleapis.com',
     'https://identitytoolkit.googleapis.com',
@@ -68,6 +71,7 @@ const errorLogEndpoint =
   typeof window !== "undefined" && typeof window.__ERROR_LOG_ENDPOINT__ === "string"
     ? window.__ERROR_LOG_ENDPOINT__
     : null;
+let devToolsWarningShown = false;
 
 function getOriginFromUrl(value) {
   if (!value || typeof value !== "string") return null;
@@ -472,8 +476,12 @@ export function initSecurity() {
       const widthExceeded = window.outerWidth - window.innerWidth > threshold;
       const heightExceeded = window.outerHeight - window.innerHeight > threshold;
       if (widthExceeded || heightExceeded) {
+        if (devToolsWarningShown) return;
+        devToolsWarningShown = true;
         console.log('%cStop!', 'color: red; font-size: 50px; font-weight: bold;');
         console.log('%cThis is a browser feature intended for developers.', 'font-size: 16px;');
+      } else {
+        devToolsWarningShown = false;
       }
     };
     setInterval(checkDevTools, 1000);
