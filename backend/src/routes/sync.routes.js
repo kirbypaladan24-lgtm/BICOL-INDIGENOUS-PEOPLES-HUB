@@ -6,7 +6,15 @@ import { requireAuth } from "../middleware/auth.js";
 import { createRateLimiter } from "../middleware/rate-limit.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import { badRequest, forbidden } from "../utils/api-error.js";
-import { canManageEmergencies, canManageLandmarks, canManagePosts, ROLE } from "../utils/roles.js";
+import {
+  canManageEmergencies,
+  canManageLandmarks,
+  canManagePosts,
+  DEFAULT_ADMIN_ROLE_BY_UID,
+  MANAGED_ADMIN_ROLES,
+  PRIMARY_SUPER_ADMIN_UID,
+  ROLE,
+} from "../utils/roles.js";
 import { ensureObject, parseEnum, parseRequiredString } from "../utils/validators.js";
 
 const router = Router();
@@ -36,13 +44,6 @@ const EMERGENCY_STATUS_VALUES = [
   "declined",
   "resolved",
 ];
-
-const DEFAULT_ROLE_BY_UID = new Map([
-  ["6bs7TaQnJBZDGiyhR1eoDMLncsb2", ROLE.SUPER_ADMIN],
-  ["7gquSWQ94xZZLMxLCW4Xlv2QJ613", ROLE.CONTENT_ADMIN],
-  ["L6aGCzr08Wd4gcj6ndiAqa0Z5dx2", ROLE.LANDMARK_ADMIN],
-  ["TI0yeuCaYcggEJmjh7H4BlAmp562", ROLE.EMERGENCY_ADMIN],
-]);
 
 function normalizeString(value, maxLength = null) {
   if (value === undefined || value === null) return null;
@@ -99,6 +100,12 @@ function normalizeRole(value, fallback = ROLE.USER) {
     return normalized;
   }
   return fallback;
+}
+
+function normalizeManagedAdminRole(value, fallback = null) {
+  const normalized = normalizeString(value, 40);
+  if (!normalized) return fallback;
+  return MANAGED_ADMIN_ROLES.includes(normalized) ? normalized : fallback;
 }
 
 function normalizeEmergencyStatus(value) {
@@ -256,7 +263,7 @@ async function upsertUserRecord(
   const safeDisplayName = normalizeString(displayName, 120);
   const safeLanguage = normalizeString(preferredLanguage, 40);
   const safePhotoUrl = normalizeString(photoUrl, 2000);
-  const safeRole = normalizeRole(role, DEFAULT_ROLE_BY_UID.get(firebaseUid) || ROLE.USER);
+  const safeRole = normalizeRole(role, DEFAULT_ADMIN_ROLE_BY_UID.get(firebaseUid) || ROLE.USER);
 
   if (await hasUserFieldConflict(client, { field: "email", value: safeEmail, firebaseUid })) {
     safeEmail = `${firebaseUid}@firebase.local`;
@@ -376,7 +383,7 @@ async function ensureUserByFirebaseUid(
     username: publicProfile?.username,
     displayName: publicProfile?.displayName || publicProfile?.username,
     preferredLanguage: publicProfile?.preferredLanguage,
-    role: preferredRole || publicProfile?.role || DEFAULT_ROLE_BY_UID.get(firebaseUid) || ROLE.USER,
+    role: preferredRole || publicProfile?.role || DEFAULT_ADMIN_ROLE_BY_UID.get(firebaseUid) || ROLE.USER,
     isAnonymous: publicProfile?.isAnonymous,
     isActive: publicProfile?.isActive,
     emailVerified: publicProfile?.emailVerified,
@@ -443,7 +450,7 @@ async function syncUserProfileJob(client, job) {
     targetUid,
     publicProfile,
     privateProfile,
-    DEFAULT_ROLE_BY_UID.get(targetUid) || ROLE.USER
+    DEFAULT_ADMIN_ROLE_BY_UID.get(targetUid) || ROLE.USER
   );
 
   return {
@@ -515,7 +522,13 @@ async function syncPostJob(client, job, auth) {
         };
 
   const authorUser = authorUid
-    ? await ensureUserByFirebaseUid(client, authorUid, authorProfile, null, DEFAULT_ROLE_BY_UID.get(authorUid))
+    ? await ensureUserByFirebaseUid(
+        client,
+        authorUid,
+        authorProfile,
+        null,
+        DEFAULT_ADMIN_ROLE_BY_UID.get(authorUid)
+      )
     : null;
 
   if (!usingCanonicalFirestorePayload && !canManagePosts(auth.role)) {
@@ -693,7 +706,7 @@ async function syncSharedLocationJob(client, job) {
       lastLoginAt: payload.updatedAt,
     },
     payload.phone ? { phone: payload.phone } : null,
-    DEFAULT_ROLE_BY_UID.get(targetUid)
+    DEFAULT_ADMIN_ROLE_BY_UID.get(targetUid)
   );
 
   const result = await client.query(
@@ -786,7 +799,7 @@ async function syncEmergencyAlertJob(client, job) {
       username: payload.username,
     },
     payload.phone ? { phone: payload.phone } : null,
-    DEFAULT_ROLE_BY_UID.get(targetUid)
+    DEFAULT_ADMIN_ROLE_BY_UID.get(targetUid)
   );
 
   let respondedByUserId = null;
@@ -794,9 +807,9 @@ async function syncEmergencyAlertJob(client, job) {
     const responder = await ensureUserByFirebaseUid(
       client,
       payload.respondedBy,
-      { uid: payload.respondedBy, role: DEFAULT_ROLE_BY_UID.get(payload.respondedBy) || ROLE.USER },
+      { uid: payload.respondedBy, role: DEFAULT_ADMIN_ROLE_BY_UID.get(payload.respondedBy) || ROLE.USER },
       null,
-      DEFAULT_ROLE_BY_UID.get(payload.respondedBy)
+      DEFAULT_ADMIN_ROLE_BY_UID.get(payload.respondedBy)
     );
     respondedByUserId = responder.id;
   }
@@ -872,10 +885,13 @@ async function syncEmergencyAlertJob(client, job) {
   };
 }
 
-async function syncAdminActivityJob(client, job) {
+async function syncAdminActivityJob(client, job, auth) {
   const payload = ensureObject(job.payload, "sync payload");
   const actorUid = payload.actorUid || job.ownerUid;
-  const actorRole = normalizeRole(payload.actorRole, DEFAULT_ROLE_BY_UID.get(actorUid) || ROLE.USER);
+  const actorRole = normalizeRole(
+    auth?.firebaseUid && actorUid === auth.firebaseUid ? auth.role : payload.actorRole,
+    DEFAULT_ADMIN_ROLE_BY_UID.get(actorUid) || ROLE.USER
+  );
 
   const actor = await ensureUserByFirebaseUid(
     client,
@@ -950,7 +966,20 @@ async function syncAdminActivityJob(client, job) {
 async function syncAdminAccessJob(client, job, auth) {
   const payload = ensureObject(job.payload, "sync payload");
   const targetUid = payload.uid || job.ownerUid || job.firestoreId;
-  const role = normalizeRole(payload.role, DEFAULT_ROLE_BY_UID.get(targetUid) || ROLE.USER);
+  const defaultManagedRole = MANAGED_ADMIN_ROLES.includes(DEFAULT_ADMIN_ROLE_BY_UID.get(targetUid))
+    ? DEFAULT_ADMIN_ROLE_BY_UID.get(targetUid)
+    : null;
+  const role = normalizeManagedAdminRole(payload.role, defaultManagedRole);
+
+  if (!role) {
+    throw badRequest("admin_access sync jobs require a delegated admin role.");
+  }
+
+  if (targetUid === PRIMARY_SUPER_ADMIN_UID) {
+    throw badRequest("The primary super admin account is not managed through admin_access sync.");
+  }
+
+  const active = normalizeBoolean(payload.active, true);
   const targetUser = await ensureUserByFirebaseUid(
     client,
     targetUid,
@@ -959,7 +988,10 @@ async function syncAdminAccessJob(client, job, auth) {
     role
   );
 
-  await client.query("UPDATE users SET role = $2 WHERE id = $1", [targetUser.id, role]);
+  await client.query("UPDATE users SET role = $2 WHERE id = $1", [
+    targetUser.id,
+    active ? role : ROLE.USER,
+  ]);
 
   const result = await client.query(
     `
@@ -984,7 +1016,7 @@ async function syncAdminAccessJob(client, job, auth) {
     [
       targetUser.id,
       role,
-      normalizeBoolean(payload.active, true),
+      active,
       auth.dbUser.id,
       normalizeString(payload.notes, 5000),
     ]
@@ -1015,7 +1047,7 @@ async function processSyncJob(client, job, auth) {
     case "emergency_alert":
       return syncEmergencyAlertJob(client, job);
     case "admin_activity":
-      return syncAdminActivityJob(client, job);
+      return syncAdminActivityJob(client, job, auth);
     case "admin_access":
       return syncAdminAccessJob(client, job, auth);
     default:
