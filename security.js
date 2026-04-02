@@ -452,8 +452,10 @@ export function getSecureItem(key) {
 // ==========================================
 
 export function initSecurity() {
-  // Apply CSP
-  applyCSP();
+  // In production, CSP is delivered as an HTTP header by Vercel.
+  if (!isProductionRuntime) {
+    applyCSP();
+  }
   
   // Add global error handler
   window.addEventListener('error', (e) => {
