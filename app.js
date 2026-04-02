@@ -921,7 +921,6 @@ async function loadLandmarksToMap() {
     renderLandmarks(normalizeLandmarks(cached));
   }
 
-  await ensureAnonAuth();
   let landmarks = [];
   try {
     landmarks = await fetchLandmarks(true);
@@ -1270,7 +1269,6 @@ async function loadPosts() {
   postsGrid?.setAttribute("aria-busy", "true");
   if (postsEmpty) postsEmpty.classList.add("hidden");
   try {
-    await ensureAnonAuth();
     const posts = await fetchPosts();
     allPostsCache = posts;
     applyPostFilter();
@@ -1291,7 +1289,6 @@ async function loadUserCount() {
   const cached = cachedRaw === null ? NaN : Number(cachedRaw);
   const hasCached = Number.isFinite(cached) && cached >= 0;
   try {
-    await ensureAnonAuth();
     let { count, source } = await fetchUsersCount();
 
     if (
