@@ -6,19 +6,22 @@ const app = createApp();
 let server = null;
 
 async function startServer() {
-  try {
-    const dbStatus = await testDatabaseConnection();
-    console.log(
-      `[Backend] PostgreSQL connected to ${dbStatus.database_name} at ${dbStatus.now}`
-    );
+  server = app.listen(env.port, () => {
+    console.log(`[Backend] BIPs Hub backend running on port ${env.port}`);
+  });
 
-    server = app.listen(env.port, () => {
-      console.log(`[Backend] BIPs Hub backend running on port ${env.port}`);
+  testDatabaseConnection(3000)
+    .then((dbStatus) => {
+      console.log(
+        `[Backend] PostgreSQL connected to ${dbStatus.database_name} at ${dbStatus.now}`
+      );
+    })
+    .catch((error) => {
+      console.error(
+        "[Backend] PostgreSQL is not reachable yet. The server will stay up, but database-backed routes may fail until the connection is corrected.",
+        error
+      );
     });
-  } catch (error) {
-    console.error("[Backend] Failed to start server:", error);
-    process.exit(1);
-  }
 }
 
 async function shutdown(signal) {
