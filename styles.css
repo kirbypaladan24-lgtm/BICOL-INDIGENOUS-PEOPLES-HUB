@@ -2356,11 +2356,37 @@ button {
   .posts-feed {
     width: 100%;
     padding: 0;
+    gap: 0;
   }
 
   .post-row {
-    padding: 16px;
-    border-radius: 18px;
+    padding: 18px 0 20px;
+    border: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    transition: none;
+  }
+
+  .post-row:first-child {
+    padding-top: 0;
+  }
+
+  .post-row:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .post-row:hover {
+    transform: none;
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: none;
+  }
+
+  .post-row.is-linked-post {
+    border-bottom-color: rgba(195, 107, 42, 0.4);
+    box-shadow: none;
   }
 
   .post-title {
@@ -2372,13 +2398,13 @@ button {
   }
 
   .post-media {
-    padding: 0 4px;
+    padding: 0;
   }
 
   .insta-carousel {
     max-width: 100%;
-    margin: 10px 0;
-    border-radius: 10px;
+    margin: 10px 0 0;
+    border-radius: 14px;
   }
 
   .insta-slide {
@@ -2398,6 +2424,19 @@ button {
   .insta-dots .dot {
     width: 7px;
     height: 7px;
+  }
+}
+
+@media (max-width: 640px) {
+  [data-theme="light"] .post-row {
+    border-bottom-color: rgba(27, 31, 26, 0.1);
+    background: transparent;
+    box-shadow: none;
+  }
+
+  [data-theme="light"] .post-row:hover {
+    border-bottom-color: rgba(27, 31, 26, 0.1);
+    box-shadow: none;
   }
 }
 
