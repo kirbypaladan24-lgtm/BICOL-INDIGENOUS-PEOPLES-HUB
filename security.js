@@ -46,7 +46,8 @@ export const CSP_POLICY = {
     'https://securetoken.googleapis.com',
     'https://ipapi.co',
     'https://api.imgbb.com',
-    'https://*.cloudfunctions.net'
+    'https://*.cloudfunctions.net',
+    'https://plausible.io'
   ],
   'frame-src': [
     "'self'",
@@ -68,11 +69,42 @@ const errorLogEndpoint =
     ? window.__ERROR_LOG_ENDPOINT__
     : null;
 
+function getOriginFromUrl(value) {
+  if (!value || typeof value !== "string") return null;
+  try {
+    return new URL(value, window.location.href).origin;
+  } catch {
+    return null;
+  }
+}
+
+function buildRuntimeCspPolicy() {
+  const policy = Object.fromEntries(
+    Object.entries(CSP_POLICY).map(([directive, sources]) => [directive, [...sources]])
+  );
+
+  const runtimeOrigins = new Set();
+  const backendBaseUrl = window.__PUBLIC_BACKEND_CONFIG__?.baseUrl || "";
+  const backendOrigin = getOriginFromUrl(backendBaseUrl);
+  const errorOrigin = getOriginFromUrl(errorLogEndpoint);
+
+  if (backendOrigin) runtimeOrigins.add(backendOrigin);
+  if (errorOrigin) runtimeOrigins.add(errorOrigin);
+
+  runtimeOrigins.forEach((origin) => {
+    if (!policy["connect-src"].includes(origin)) {
+      policy["connect-src"].push(origin);
+    }
+  });
+
+  return policy;
+}
+
 /**
  * Apply CSP as meta tag (for static hosting without server headers)
  */
 export function applyCSP() {
-  const cspString = Object.entries(CSP_POLICY)
+  const cspString = Object.entries(buildRuntimeCspPolicy())
     .map(([directive, sources]) => `${directive} ${sources.join(' ')}`)
     .join('; ');
   
