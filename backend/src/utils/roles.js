@@ -35,15 +35,15 @@ export function hasRole(role, allowedRoles = []) {
 }
 
 export function canManagePosts(role) {
-  return hasRole(role, [ROLE.CONTENT_ADMIN]);
+  return isAdminRole(role);
 }
 
 export function canManageLandmarks(role) {
-  return hasRole(role, [ROLE.LANDMARK_ADMIN]);
+  return isAdminRole(role);
 }
 
 export function canManageEmergencies(role) {
-  return hasRole(role, [ROLE.EMERGENCY_ADMIN]);
+  return isAdminRole(role);
 }
 
 export function canViewAdminDashboard(role) {
