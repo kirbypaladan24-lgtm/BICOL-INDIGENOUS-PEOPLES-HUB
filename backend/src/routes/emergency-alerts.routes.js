@@ -7,7 +7,7 @@ import { asyncHandler } from "../utils/async-handler.js";
 import { parsePagination } from "../utils/pagination.js";
 import { logAdminActivity } from "../utils/audit-log.js";
 import { badRequest, forbidden, notFound } from "../utils/api-error.js";
-import { ROLE } from "../utils/roles.js";
+import { canManageEmergencies, ROLE } from "../utils/roles.js";
 import { buildUserIdentitySnapshot, loadUserByIdOrThrow } from "../utils/user-records.js";
 import {
   ensureObject,
@@ -35,7 +35,7 @@ const responseLimiter = createRateLimiter({
 router.get(
   "/",
   requireAuth,
-  requireRoles(ROLE.EMERGENCY_ADMIN, ROLE.SUPER_ADMIN),
+  requireRoles(ROLE.CONTENT_ADMIN, ROLE.LANDMARK_ADMIN, ROLE.EMERGENCY_ADMIN, ROLE.SUPER_ADMIN),
   asyncHandler(async (req, res) => {
     const { page, limit, offset } = parsePagination(req);
     const params = [];
@@ -85,8 +85,7 @@ router.get(
 
     const alert = result.rows[0];
     const isOwner = String(alert.user_id) === String(req.auth.dbUser.id);
-    const isEmergencyManager =
-      req.auth.role === ROLE.EMERGENCY_ADMIN || req.auth.role === ROLE.SUPER_ADMIN;
+    const isEmergencyManager = canManageEmergencies(req.auth.role);
 
     if (!isOwner && !isEmergencyManager) {
       throw forbidden("You are not allowed to view this emergency alert.");
@@ -105,8 +104,7 @@ router.post(
     const userId = body.user_id
       ? parseInteger(body.user_id, "user_id", { min: 1 })
       : req.auth.dbUser.id;
-    const isEmergencyManager =
-      req.auth.role === ROLE.EMERGENCY_ADMIN || req.auth.role === ROLE.SUPER_ADMIN;
+    const isEmergencyManager = canManageEmergencies(req.auth.role);
 
     if (!isEmergencyManager && String(userId) !== String(req.auth.dbUser.id)) {
       throw forbidden("You can only submit an emergency alert for your own account.");
@@ -161,7 +159,7 @@ router.post(
 router.patch(
   "/:id/respond",
   requireAuth,
-  requireRoles(ROLE.EMERGENCY_ADMIN, ROLE.SUPER_ADMIN),
+  requireRoles(ROLE.CONTENT_ADMIN, ROLE.LANDMARK_ADMIN, ROLE.EMERGENCY_ADMIN, ROLE.SUPER_ADMIN),
   responseLimiter,
   asyncHandler(async (req, res) => {
     const body = ensureObject(req.body);
