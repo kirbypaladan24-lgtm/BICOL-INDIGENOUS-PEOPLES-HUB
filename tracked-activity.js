@@ -76,6 +76,23 @@ const SECTION_CONFIG = {
     emptyMessage: "No tracked emergency activity in this range.",
   },
 };
+const POST_ACTIVITY_COLUMNS = [
+  {
+    actionType: "post_created",
+    title: "Created posts",
+    emptyMessage: "No created posts in this range.",
+  },
+  {
+    actionType: "post_updated",
+    title: "Edited posts",
+    emptyMessage: "No edited posts in this range.",
+  },
+  {
+    actionType: "post_deleted",
+    title: "Deleted posts",
+    emptyMessage: "No deleted posts in this range.",
+  },
+];
 
 let currentRange = "30";
 let latestLogs = [];
@@ -299,9 +316,36 @@ function renderSection(sectionKey, logs = []) {
             <span>Last activity: ${escapeHtml(formatTimestamp(group.lastActivity))}</span>
           </div>
         </div>
-        <div class="tracked-admin-log-list admin-history-list">
-          ${group.logs.slice(0, 12).map(createActivityItem).join("")}
-        </div>
+        ${
+          sectionKey === "posts"
+            ? `
+              <div class="tracked-post-columns">
+                ${POST_ACTIVITY_COLUMNS.map((column) => {
+                  const columnLogs = group.logs.filter((entry) => entry?.actionType === column.actionType);
+                  return `
+                    <section class="tracked-post-column">
+                      <div class="tracked-post-column-head">
+                        <span>${escapeHtml(column.title)}</span>
+                        <strong>${formatCompactNumber(columnLogs.length)}</strong>
+                      </div>
+                      <div class="tracked-post-column-list admin-history-list">
+                        ${
+                          columnLogs.length
+                            ? columnLogs.slice(0, 10).map(createActivityItem).join("")
+                            : `<p class="admin-history-empty">${escapeHtml(column.emptyMessage)}</p>`
+                        }
+                      </div>
+                    </section>
+                  `;
+                }).join("")}
+              </div>
+            `
+            : `
+              <div class="tracked-admin-log-list admin-history-list">
+                ${group.logs.slice(0, 12).map(createActivityItem).join("")}
+              </div>
+            `
+        }
       </article>
     `)
     .join("");
