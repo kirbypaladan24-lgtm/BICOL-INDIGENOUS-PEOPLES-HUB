@@ -29,6 +29,8 @@ const editor = document.getElementById("richEditor");
 const saveBtn = document.getElementById("savePostBtn");
 const resetBtn = document.getElementById("resetPostBtn");
 const listContainer = document.getElementById("adminPosts");
+const adminPostSearchInput = document.getElementById("adminPostSearch");
+const clearAdminPostSearchBtn = document.getElementById("clearAdminPostSearch");
 const landmarkName = document.getElementById("landmarkName");
 const landmarkLat = document.getElementById("landmarkLat");
 const landmarkLng = document.getElementById("landmarkLng");
@@ -69,6 +71,9 @@ let toolbarBound = false;
 let landmarkBindingsBound = false;
 let chartBindingsBound = false;
 let latestAdminChartPayload = null;
+let adminPostsCache = [];
+let adminPostSearchQuery = "";
+let adminPostSearchBound = false;
 
 function autoResizeTextarea(textarea, maxHeight = 260) {
   if (!textarea) return;
@@ -177,6 +182,24 @@ function updateAdminWorkspaceMeta({ postsCount, landmarksCount, updatedAt = new 
   if (adminWorkspaceUpdated) {
     adminWorkspaceUpdated.textContent = formatWorkspaceTimestamp(updatedAt);
   }
+}
+
+function normalizeSearchText(value = "") {
+  return String(value).trim().toLowerCase();
+}
+
+function updateAdminPostLibraryCount(totalCount = 0, visibleCount = totalCount) {
+  if (!adminPostsCount) return;
+  const total = formatCompactNumber(totalCount);
+  const visible = formatCompactNumber(visibleCount);
+  adminPostsCount.textContent = visibleCount === totalCount ? total : `${visible}/${total}`;
+}
+
+function getFilteredAdminPosts(posts = adminPostsCache) {
+  if (!adminPostSearchQuery) return posts;
+  return posts.filter((post) =>
+    String(post?.title || "").toLowerCase().includes(adminPostSearchQuery)
+  );
 }
 
 function buildDailySeries(items, resolveDate, days = 30) {
@@ -823,11 +846,120 @@ async function loadLandmarks() {
   }
 }
 
+function bindAdminPostLibraryActions() {
+  if (!listContainer) return;
+
+  listContainer.querySelectorAll(".edit").forEach((btn) =>
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.id;
+      try {
+        const post = await fetchPost(id, true);
+        if (!post) {
+          showToast("Post not found.", "warn");
+          return;
+        }
+        currentId = id;
+        currentPostAuthorId = post.authorId ?? null;
+        currentPostAuthorName = post.author || null;
+        postTitle.value = post.title || "";
+        editor.innerHTML = post.content || "";
+        currentMedia = Array.isArray(post.media) ? post.media.slice() : (post.coverUrl ? [post.coverUrl] : []);
+        renderAdminPreviews(currentMedia);
+        adminPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+      } catch (e) {
+        console.error("Failed to fetch post for edit:", e);
+        showToast("Failed to load post for editing: " + (e.message || e), "error");
+      }
+    })
+  );
+
+  listContainer.querySelectorAll(".delete").forEach((btn) =>
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.id;
+      if (!confirm("Delete this post?")) return;
+      try {
+        await deletePost(id);
+        showToast("Post deleted successfully.", "success");
+        const posts = await loadAdminPosts();
+        await refreshAdminCharts({ posts });
+        window.dispatchEvent(new Event("posts-updated"));
+      } catch (e) {
+        console.error("Delete failed - full error:", e);
+        showToast("Delete failed: " + (e?.code ? `${e.code} - ${e.message}` : (e.message || e)), "error");
+      }
+    })
+  );
+}
+
+function renderAdminPosts(posts = adminPostsCache) {
+  if (!listContainer) return;
+
+  const filteredPosts = getFilteredAdminPosts(posts);
+  updateAdminPostLibraryCount(posts.length, filteredPosts.length);
+
+  if (!posts.length) {
+    listContainer.innerHTML = "<p class='hint'>No posts yet.</p>";
+    return;
+  }
+
+  if (!filteredPosts.length) {
+    listContainer.innerHTML = "<p class='hint'>No post titles match your search.</p>";
+    return;
+  }
+
+  listContainer.innerHTML = "";
+  filteredPosts.forEach((p) => {
+    const item = document.createElement("div");
+    item.className = "list-item";
+    item.innerHTML = `
+      <div>
+        <strong>${p.title || "Untitled"}</strong>
+        <div class="chip">${p.author || "Unknown"}</div>
+      </div>
+      <div class="list-actions">
+        <button data-id="${p.id}" class="ghost small edit">Edit</button>
+        <button data-id="${p.id}" class="ghost small delete">Delete</button>
+      </div>
+    `;
+    listContainer.appendChild(item);
+  });
+
+  bindAdminPostLibraryActions();
+}
+
+function bindAdminPostSearch() {
+  if (adminPostSearchBound || !adminPostSearchInput) return;
+
+  const syncSearchState = () => {
+    adminPostSearchQuery = normalizeSearchText(adminPostSearchInput.value);
+    if (clearAdminPostSearchBtn) {
+      clearAdminPostSearchBtn.disabled = !adminPostSearchInput.value;
+    }
+    renderAdminPosts(adminPostsCache);
+  };
+
+  adminPostSearchInput.addEventListener("input", syncSearchState);
+  clearAdminPostSearchBtn?.addEventListener("click", () => {
+    adminPostSearchInput.value = "";
+    syncSearchState();
+    adminPostSearchInput.focus();
+  });
+
+  syncSearchState();
+  adminPostSearchBound = true;
+}
+
 /* Load admin posts and populate list with Edit/Delete handlers */
 async function loadAdminPosts() {
   if (!listContainer) return;
   showPostsSkeleton(listContainer, 3);
   try {
+    const freshPosts = await fetchPosts(true);
+    adminPostsCache = freshPosts || [];
+    updateAdminWorkspaceMeta({ postsCount: adminPostsCache.length });
+    renderAdminPosts(adminPostsCache);
+    return adminPostsCache;
+
     // CRITICAL: Force server read for production P2P reliability
     const posts = await fetchPosts(true);
     updateAdminWorkspaceMeta({ postsCount: posts?.length || 0 });
@@ -900,6 +1032,8 @@ async function loadAdminPosts() {
     return posts;
   } catch (e) {
     console.error("Load posts failed:", e);
+    adminPostsCache = [];
+    updateAdminPostLibraryCount(0, 0);
     listContainer.innerHTML = "<p class='hint'>Unable to load posts right now.</p>";
     showToast("Failed to load posts: " + (e.message || e), "error");
     return [];
@@ -934,6 +1068,7 @@ export async function initAdmin(user) {
   // Initialize toolbar and handlers
   if (postToolsAllowed) {
     bindToolbar();
+    bindAdminPostSearch();
     saveBtn.onclick = handleSave;
     resetBtn.onclick = resetForm;
   } else {
