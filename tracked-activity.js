@@ -42,6 +42,9 @@ const changePassForm = document.getElementById("changePassForm");
 const currentPassword = document.getElementById("currentPassword");
 const newPassword = document.getElementById("newPassword");
 const confirmPassword = document.getElementById("confirmPassword");
+const queryParams = new URLSearchParams(window.location.search);
+const selectedActorUid = String(queryParams.get("uid") || "").trim();
+const selectedActorLabelHint = String(queryParams.get("label") || "").trim();
 
 const THEME_KEY = "bicol-ip-theme";
 const RANGE_CONFIG = {
@@ -77,6 +80,7 @@ const SECTION_CONFIG = {
 let currentRange = "30";
 let latestLogs = [];
 let unsubscribeActivityLogs = null;
+let selectedActorProfile = null;
 
 function applyTheme(theme) {
   const value = theme === "light" ? "light" : "dark";
@@ -211,6 +215,19 @@ function createActivityItem(entry) {
   </${wrapperTag}>`;
 }
 
+function getSelectedActorLabel() {
+  if (selectedActorProfile?.username) return selectedActorProfile.username;
+  if (selectedActorProfile?.email) return selectedActorProfile.email.split("@")[0];
+  if (selectedActorLabelHint) return selectedActorLabelHint;
+  const matchedLog = latestLogs.find((entry) => entry?.actorUid === selectedActorUid);
+  return (
+    matchedLog?.actorName ||
+    matchedLog?.actorEmail?.split("@")[0] ||
+    selectedActorUid ||
+    "selected admin"
+  );
+}
+
 function getSectionForLog(entry) {
   if (!entry?.actionType) return null;
   if (SECTION_CONFIG.posts.actionTypes.has(entry.actionType)) return "posts";
@@ -291,19 +308,24 @@ function renderSection(sectionKey, logs = []) {
 }
 
 function renderDashboard() {
-  const filteredLogs = filterLogsByRange(latestLogs, currentRange);
+  const rangedLogs = filterLogsByRange(latestLogs, currentRange);
+  const filteredLogs = selectedActorUid
+    ? rangedLogs.filter((entry) => entry?.actorUid === selectedActorUid)
+    : rangedLogs;
   const postLogs = filteredLogs.filter((entry) => getSectionForLog(entry) === "posts");
   const landmarkLogs = filteredLogs.filter((entry) => getSectionForLog(entry) === "landmarks");
   const emergencyLogs = filteredLogs.filter((entry) => getSectionForLog(entry) === "emergencies");
   const activeAdmins = new Set(filteredLogs.map((entry) => entry?.actorUid).filter(Boolean)).size;
   const rangeLabel = RANGE_CONFIG[currentRange]?.label || RANGE_CONFIG.all.label;
+  const selectedActorLabel = getSelectedActorLabel();
 
   if (trackedActivityTotal) trackedActivityTotal.textContent = formatCompactNumber(filteredLogs.length);
   if (trackedActivityAdmins) trackedActivityAdmins.textContent = formatCompactNumber(activeAdmins);
   if (trackedActivityUpdated) trackedActivityUpdated.textContent = formatTimestamp(filteredLogs[0]?.createdAt || null);
   if (trackedActivityStatus) {
-    trackedActivityStatus.textContent =
-      `${formatCompactNumber(filteredLogs.length)} tracked operations across ${activeAdmins} admins in the ${rangeLabel.toLowerCase()} window.`;
+    trackedActivityStatus.textContent = selectedActorUid
+      ? `${formatCompactNumber(filteredLogs.length)} tracked operations for ${selectedActorLabel} in the ${rangeLabel.toLowerCase()} window.`
+      : `${formatCompactNumber(filteredLogs.length)} tracked operations across ${activeAdmins} admins in the ${rangeLabel.toLowerCase()} window.`;
   }
 
   renderSection("posts", postLogs);
@@ -428,11 +450,13 @@ observeAuth(async (user) => {
   setSuperAdminNavVisible(true);
 
   try {
-    const [profile, initialLogs] = await Promise.all([
+    const [profile, initialLogs, actorProfile] = await Promise.all([
       getUserProfile(user.uid),
       fetchAdminActivityLogs().catch(() => []),
+      selectedActorUid ? getUserProfile(selectedActorUid).catch(() => null) : Promise.resolve(null),
     ]);
     renderSuperAdminIdentity(profile, user);
+    selectedActorProfile = actorProfile;
     latestLogs = initialLogs;
     renderDashboard();
 
