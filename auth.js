@@ -1671,7 +1671,7 @@ export async function deletePost(id) {
     throw new Error("Your admin role cannot delete posts.");
   }
   const existingPost = await fetchPost(id, false).catch(() => null);
-  queuePostDeleteSync(id, existingPost, { waitForImmediatePush: false }).catch((error) => {
+  queuePostDeleteSync(id, existingPost, { waitForImmediatePush: true }).catch((error) => {
     debugWarn("Failed to queue post delete sync:", error);
   });
   await deleteDoc(doc(db, "posts", id));
@@ -1934,7 +1934,7 @@ export async function deleteLandmark(id) {
     throw new Error("Your admin role cannot delete landmarks.");
   }
   const existingLandmark = await fetchLandmark(id, false).catch(() => null);
-  queueLandmarkDeleteSync(id, existingLandmark, { waitForImmediatePush: false }).catch((error) => {
+  queueLandmarkDeleteSync(id, existingLandmark, { waitForImmediatePush: true }).catch((error) => {
     debugWarn("Failed to queue landmark delete sync:", error);
   });
   await deleteDoc(doc(db, "landmarks", id));
