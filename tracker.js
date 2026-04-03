@@ -1,4 +1,4 @@
-import { observeAuth, observeSharedLocations, isSuperAdmin, canManageEmergencies, canAccessAdminWorkspace, getAdminRoleLabel, logout, respondToEmergency } from "./auth.js";
+import { observeAuth, observeSharedLocations, isSuperAdmin, canAccessTracker, canAccessAdminWorkspace, getAdminRoleLabel, logout, respondToEmergency } from "./auth.js";
 import { initI18n, t } from "./i18n.js";
 import { showToast } from "./ui.js";
 import { registerServiceWorker } from "./pwa.js";
@@ -729,7 +729,7 @@ observeAuth((user) => {
     return;
   }
 
-  if (!canManageEmergencies(user)) {
+  if (!canAccessTracker(user)) {
     window.location.href = "profile.html";
     return;
   }
