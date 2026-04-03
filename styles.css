@@ -4465,11 +4465,15 @@ textarea#landmarkSummary {
 }
 
 .admin-list {
-  min-height: 220px;
-  max-height: 720px;
+  height: clamp(320px, 58vh, 720px);
+  min-height: clamp(320px, 58vh, 720px);
+  max-height: clamp(320px, 58vh, 720px);
   overflow: auto;
   padding-right: 4px;
   scrollbar-gutter: stable;
+  align-content: start;
+  align-items: start;
+  grid-auto-rows: min-content;
 }
 
 .admin-list-search {
@@ -4541,6 +4545,7 @@ textarea#landmarkSummary {
   border-radius: 0;
   background: transparent;
   border-left: 2px solid rgba(255, 255, 255, 0.12);
+  align-self: start;
 }
 
 .admin-list .list-item strong {
