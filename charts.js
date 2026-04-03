@@ -10,9 +10,9 @@ import {
   isAdmin,
   isSuperAdmin,
   getAdminRoleLabel,
-  canManagePosts,
-  canManageLandmarks,
-  canManageEmergencies,
+  canViewPostAdminTools,
+  canViewLandmarkAdminTools,
+  canViewEmergencyAdminTools,
   canAccessAdminWorkspace,
   canAccessTracker,
   fetchPosts,
@@ -562,7 +562,10 @@ function renderIdentity(identity) {
 }
 
 function getChartScope(user) {
-  if (isAdmin(user)) return "all";
+  if (isSuperAdmin(user)) return "all";
+  if (canViewPostAdminTools(user)) return "posts";
+  if (canViewLandmarkAdminTools(user)) return "landmarks";
+  if (canViewEmergencyAdminTools(user)) return "emergencies";
   return "none";
 }
 
