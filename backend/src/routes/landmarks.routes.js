@@ -70,7 +70,7 @@ router.get(
 router.post(
   "/",
   requireAuth,
-  requireRoles(ROLE.LANDMARK_ADMIN, ROLE.SUPER_ADMIN),
+  requireRoles(ROLE.CONTENT_ADMIN, ROLE.LANDMARK_ADMIN, ROLE.EMERGENCY_ADMIN, ROLE.SUPER_ADMIN),
   writeLimiter,
   asyncHandler(async (req, res) => {
     const body = ensureObject(req.body);
@@ -114,7 +114,7 @@ router.post(
 router.put(
   "/:id",
   requireAuth,
-  requireRoles(ROLE.LANDMARK_ADMIN, ROLE.SUPER_ADMIN),
+  requireRoles(ROLE.CONTENT_ADMIN, ROLE.LANDMARK_ADMIN, ROLE.EMERGENCY_ADMIN, ROLE.SUPER_ADMIN),
   writeLimiter,
   asyncHandler(async (req, res) => {
     const existing = await query(
@@ -197,7 +197,7 @@ router.put(
 router.delete(
   "/:id",
   requireAuth,
-  requireRoles(ROLE.LANDMARK_ADMIN, ROLE.SUPER_ADMIN),
+  requireRoles(ROLE.CONTENT_ADMIN, ROLE.LANDMARK_ADMIN, ROLE.EMERGENCY_ADMIN, ROLE.SUPER_ADMIN),
   writeLimiter,
   asyncHandler(async (req, res) => {
     await withTransaction(async (client) => {
