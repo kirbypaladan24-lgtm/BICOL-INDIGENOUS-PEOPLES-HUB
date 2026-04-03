@@ -4472,6 +4472,20 @@ textarea#landmarkSummary {
   scrollbar-gutter: stable;
 }
 
+.admin-list-search {
+  width: 100%;
+  margin: 0 0 14px;
+}
+
+.admin-list-search input {
+  min-width: 0;
+}
+
+.admin-list-search .icon-btn.small:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 .admin-list-count {
   display: inline-flex;
   align-items: center;
