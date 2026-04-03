@@ -5492,3 +5492,73 @@ textarea#landmarkSummary {
     scroll-behavior: auto !important;
   }
 }
+
+/* Global sharp-corner override: keep the platform visually angular across pages. */
+:root {
+  --radius: 0px;
+}
+
+:where(
+  button,
+  input,
+  select,
+  textarea,
+  .ghost,
+  .solid,
+  .theme-toggle,
+  .toggle-thumb,
+  .mobile-menu,
+  .desktop-shortcuts,
+  .language-select,
+  .topbar,
+  .nav a,
+  .hero-card,
+  .hero-story-pill,
+  .pill,
+  .legend-chip,
+  .trust-band-item,
+  .about-story-card,
+  .about-card,
+  .contact-story-card,
+  .contact-cta-card,
+  .profile-overview-card,
+  .workspace-meta-pill,
+  .admin-card,
+  .admin-side-panel,
+  .admin-list,
+  .tracker-list,
+  .tracker-empty,
+  .tracker-route-pill,
+  .tracker-detail-card,
+  .tracker-response-form,
+  .post-row,
+  .post-reactions,
+  .react-btn,
+  .share-btn,
+  .post-share,
+  .map,
+  .map-info,
+  .form,
+  .editor,
+  .toolbar button,
+  .toolbar select,
+  .media-preview,
+  .media-gallery img,
+  .media-gallery .tile,
+  .insta-carousel,
+  .insta-slide,
+  [class*="card"],
+  [class*="panel"],
+  [class*="pill"],
+  [class*="chip"],
+  [class*="tile"],
+  [class*="badge"],
+  [class*="menu"],
+  [class*="shell"],
+  [class*="modal"],
+  [class*="dialog"],
+  [class*="drawer"],
+  [class*="box"]
+) {
+  border-radius: 0 !important;
+}
