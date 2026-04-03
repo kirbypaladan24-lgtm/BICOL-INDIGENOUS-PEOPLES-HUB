@@ -40,7 +40,6 @@ const superAdminMetricLandmarkOps = document.getElementById("superAdminMetricLan
 const superAdminMetricEmergencyOps = document.getElementById("superAdminMetricEmergencyOps");
 const superAdminMetricActiveAdmins = document.getElementById("superAdminMetricActiveAdmins");
 const superAdminOperators = document.getElementById("superAdminOperators");
-const superAdminRecentActivity = document.getElementById("superAdminRecentActivity");
 const rangeButtons = Array.from(document.querySelectorAll("[data-range]"));
 const changePassDialog = document.getElementById("changePassDialog");
 const closeChangePass = document.getElementById("closeChangePass");
@@ -417,6 +416,12 @@ function renderOperatorPanels(operatorSummaries) {
           <button type="button" class="solid small" data-admin-save="${operator.uid}">
             Save Access
           </button>
+          <a
+            class="solid small tracked-activity-entry"
+            href="tracked-activity.html?uid=${encodeURIComponent(operator.uid)}&label=${encodeURIComponent(operator.identity.name || operator.label)}"
+          >
+            Tracked Activity
+          </a>
         </div>
       </div>
       <div class="superadmin-mini-metrics">
@@ -435,10 +440,6 @@ function renderOperatorPanels(operatorSummaries) {
           <div id="superAdminBarChart${index}" class="admin-bar-chart" aria-live="polite"></div>
         </section>
       </div>
-      <section class="superadmin-recent-block">
-        <p class="admin-card-eyebrow">Latest tracked activity</p>
-        <div id="superAdminRecent${index}" class="admin-history-list superadmin-history-list"></div>
-      </section>
     </article>
   `).join("");
 
@@ -448,22 +449,9 @@ function renderOperatorPanels(operatorSummaries) {
       fillColor: `${operator.color}22`,
     });
     renderBarChart(document.getElementById(`superAdminBarChart${index}`), operator.perActionCounts);
-    const recentList = document.getElementById(`superAdminRecent${index}`);
-    if (recentList) {
-      recentList.innerHTML = operator.logs.length
-        ? operator.logs.slice(0, 5).map(createActivityItem).join("")
-        : `<p class="admin-history-empty">No tracked admin activity in this range.</p>`;
-    }
   });
 
   bindAdminAccessControls();
-}
-
-function renderRecentActivity(logs = []) {
-  if (!superAdminRecentActivity) return;
-  superAdminRecentActivity.innerHTML = logs.length
-    ? logs.slice(0, 12).map(createActivityItem).join("")
-    : `<p class="admin-history-empty">No tracked admin activity in this range.</p>`;
 }
 
 function renderDashboard() {
@@ -471,7 +459,6 @@ function renderDashboard() {
   const operatorSummaries = buildOperatorSummaries(filteredLogs);
   renderOverview(filteredLogs, operatorSummaries);
   renderOperatorPanels(operatorSummaries);
-  renderRecentActivity(filteredLogs);
 }
 
 async function loadAdminProfiles() {
